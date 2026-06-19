@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SELECT ANSWER CLEAR</title>
+
+<style>
+:root{
+    --bg:#05080a;
+    --panel:#0b1015;
+    --line:#6fffe9;
+    --text:#e9fffb;
+    --muted:#8ccfc7;
+    --danger:#ff5c5c;
+}
+
+*{
+    box-sizing:border-box;
+}
+
+html,
+body{
+    margin:0;
+    min-height:100%;
+}
+
+body{
+    background:
+        radial-gradient(circle at top, rgba(111,255,233,.11), transparent 36%),
+        var(--bg);
+    color:var(--text);
+    font-family:"Trebuchet MS","Yu Gothic","Hiragino Kaku Gothic ProN",sans-serif;
+    overflow-x:hidden;
+}
+
+.expiry-bar{
+    position:fixed;
+    top:0;
+    left:0;
+    right:0;
+    z-index:700;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    padding:9px 12px;
+    background:rgba(5,8,10,.94);
+    border-bottom:1px solid rgba(111,255,233,.7);
+    color:var(--text);
+    font-size:13px;
+    line-height:1.5;
+    box-shadow:0 0 20px rgba(111,255,233,.12);
+    backdrop-filter:blur(8px);
+}
+
+.expiry-label{
+    color:var(--line);
+    font-weight:bold;
+    letter-spacing:.12em;
+}
+
+.container{
+    width:min(94%,760px);
+    margin:0 auto;
+    padding:70px 0 32px;
+}
+
+.box{
+    border:1px solid var(--line);
+    background:rgba(11,16,21,.96);
+    padding:18px;
+    margin-bottom:14px;
+    box-shadow:0 0 22px rgba(111,255,233,.1);
+}
+
+.clear{
+    font-size:clamp(48px,15vw,90px);
+    color:var(--line);
+    letter-spacing:.12em;
+    font-weight:900;
+    text-shadow:0 0 24px rgba(111,255,233,.45);
+}
+
+.text{
+    color:var(--muted);
+    line-height:1.8;
+    font-size:15px;
+}
+
+.clear-image-frame{
+    width:100%;
+    margin:16px 0;
+    border:1px solid rgba(111,255,233,.55);
+    background:#000;
+    overflow:hidden;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    max-height:62vh;
+}
+
+.clear-image{
+    width:100%;
+    height:100%;
+    display:block;
+    object-fit:contain;
+}
+
+.main-button{
+    width:100%;
+    border:1px solid var(--line);
+    background:transparent;
+    color:var(--line);
+    padding:14px;
+    font-family:inherit;
+    font-size:16px;
+    font-weight:bold;
+    cursor:pointer;
+    margin-top:10px;
+}
+
+.main-button:active{
+    background:var(--line);
+    color:var(--bg);
+}
+
+.credit{
+    margin-top:20px;
+    padding-top:14px;
+    border-top:1px solid rgba(111,255,233,.35);
+    color:var(--muted);
+    line-height:1.8;
+    font-size:14px;
+}
+
+.auth-screen{
+    position:fixed;
+    inset:0;
+    z-index:1200;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+    background:rgba(5,8,10,.97);
+}
+
+.auth-card{
+    width:min(94vw,560px);
+    border:1px solid var(--line);
+    background:rgba(11,16,21,.98);
+    padding:22px;
+    box-shadow:0 0 30px rgba(111,255,233,.12);
+}
+
+.auth-title{
+    color:var(--line);
+    font-size:clamp(24px,7vw,38px);
+    font-weight:900;
+    letter-spacing:.08em;
+    margin-bottom:14px;
+}
+
+.auth-error{
+    color:var(--danger);
+}
+
+.auth-log{
+    white-space:pre-wrap;
+    margin-top:14px;
+    color:var(--muted);
+    font-family:Consolas,"Courier New",monospace;
+    font-size:13px;
+    line-height:1.65;
+}
+
+.hidden{
+    display:none !important;
+}
+
+@media(max-width:600px){
+    .expiry-bar{
+        flex-direction:column;
+        gap:2px;
+        font-size:12px;
+        text-align:center;
+        padding:8px 10px;
+    }
+
+    .container{
+        width:94%;
+        padding-top:88px;
+    }
+
+    .box{
+        padding:14px;
+    }
+
+    .clear-image-frame{
+        max-height:44vh;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div id="expiryBar" class="expiry-bar hidden">
+    <span class="expiry-label">CLEAR PAGE</span>
+    <span id="expiryBarText">認証中...</span>
+</div>
+
+<div id="authScreen" class="auth-screen">
+    <div class="auth-card">
+        <div class="auth-title">CLEAR AUTH</div>
+
+        <p class="text" id="authMessage">
+            クリア情報を確認しています。
+        </p>
+
+        <div class="auth-log" id="authLog"></div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="box">
+        <div class="clear">CLEAR</div>
+
+        <div class="clear-image-frame" id="clearImageFrame">
+            <img id="clearImage" class="clear-image" src="assets/clear.jpg" alt="クリア画像">
+        </div>
+
+        <p class="text">
+            おめでとうございます。<br>
+            あなたは「セレクトアンサー」をクリアしました。<br><br>
+            このプレイURLはクリア済みとして記録されました。<br>
+            以降、index.html と game.html にはアクセスできません。<br>
+            このクリアページだけはいつでも表示できます。
+        </p>
+
+        <button class="main-button" id="xButton">
+            Xでクリア報告
+        </button>
+
+        <button class="main-button" id="formButton">
+            クリア報告※必ず行ってください
+        </button>
+
+        <div class="credit">
+            <strong>CREDIT</strong><br>
+            制作：RIDDLE STORY運営代表<br>
+            RIDDLE STORY MEMBER<br>
+            かずの<br>
+            Game Design：Chat GPT<br>
+            Thanks：プレイしてくれたあなた
+        </div>
+    </div>
+</div>
+
+<script>
+const TOKEN_API_URL = "https://script.google.com/macros/s/AKfycbxQlmn_aMq-6ny0Io4iGbBHFXcU6vRxYt6BGk9MeLbZjppsqWlujis-bMdFRXciMZtt/exec";
+const GAME_ID = "select-answer";
+const DEVICE_KEY = "riddle_story_device_id_v1";
+const TOKEN_KEY = "riddle_story_current_token_select-answer";
+
+const X_REPORT_URL = "https://x.gd/i99M0";
+const FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLScqJrkdMVAd0Kh4MPfJYdWWg7_rKId7vrPz6mwRsMqMMz6VBw/viewform?usp=publish-editor";
+
+const expiryBar = document.getElementById("expiryBar");
+const expiryBarText = document.getElementById("expiryBarText");
+const authScreen = document.getElementById("authScreen");
+const authMessage = document.getElementById("authMessage");
+const authLog = document.getElementById("authLog");
+
+const clearImageFrame = document.getElementById("clearImageFrame");
+const clearImage = document.getElementById("clearImage");
+
+const xButton = document.getElementById("xButton");
+const formButton = document.getElementById("formButton");
+
+let ticketExpiresAt = null;
+let expiryCountdownTimer = null;
+
+function addAuthLog(message){
+    const time = new Date().toLocaleTimeString("ja-JP");
+    authLog.textContent += `${time} > ${message}\n`;
+}
+
+function getTokenFromUrl(){
+    const params = new URLSearchParams(location.search);
+    return params.get("token");
+}
+
+function getCurrentToken(){
+    const urlToken = getTokenFromUrl();
+
+    if(urlToken){
+        localStorage.setItem(TOKEN_KEY, urlToken);
+        return urlToken;
+    }
+
+    return localStorage.getItem(TOKEN_KEY);
+}
+
+function getOrCreateDeviceId(){
+    let deviceId = localStorage.getItem(DEVICE_KEY);
+
+    if(!deviceId){
+        if(window.crypto && crypto.randomUUID){
+            deviceId = "dev_" + crypto.randomUUID();
+        }else{
+            deviceId = "dev_" + Date.now() + "_" + Math.random().toString(36).slice(2);
+        }
+
+        localStorage.setItem(DEVICE_KEY, deviceId);
+    }
+
+    return deviceId;
+}
+
+function callTicketApi(action, token, deviceId){
+    return new Promise((resolve, reject) => {
+        const callbackName = "clearCallback_" + Date.now() + "_" + Math.random().toString(36).slice(2);
+        const script = document.createElement("script");
+
+        window[callbackName] = function(data){
+            resolve(data);
+
+            delete window[callbackName];
+
+            if(script && script.parentNode){
+                script.parentNode.removeChild(script);
+            }
+        };
+
+        const url =
+            TOKEN_API_URL +
+            "?callback=" + encodeURIComponent(callbackName) +
+            "&token=" + encodeURIComponent(token) +
+            "&gameId=" + encodeURIComponent(GAME_ID) +
+            "&deviceId=" + encodeURIComponent(deviceId) +
+            "&action=" + encodeURIComponent(action);
+
+        script.src = url;
+
+        script.onerror = function(){
+            reject(new Error("JSONP通信に失敗しました。"));
+
+            delete window[callbackName];
+
+            if(script && script.parentNode){
+                script.parentNode.removeChild(script);
+            }
+        };
+
+        document.body.appendChild(script);
+    });
+}
+
+function showExpiryBar(expiresAtValue){
+    expiryBar.classList.remove("hidden");
+
+    if(!expiresAtValue){
+        expiryBarText.textContent = "クリア済み";
+        return;
+    }
+
+    ticketExpiresAt = new Date(expiresAtValue);
+
+    updateExpiryBar();
+
+    if(expiryCountdownTimer){
+        clearInterval(expiryCountdownTimer);
+    }
+
+    expiryCountdownTimer = setInterval(updateExpiryBar, 1000);
+}
+
+function updateExpiryBar(){
+    if(!ticketExpiresAt){
+        return;
+    }
+
+    const limitText = ticketExpiresAt.toLocaleString("ja-JP", {
+        year:"numeric",
+        month:"2-digit",
+        day:"2-digit",
+        hour:"2-digit",
+        minute:"2-digit"
+    });
+
+    expiryBarText.textContent =
+        `クリア済み / 元の有効期限：${limitText} まで`;
+}
+
+function setFrameRatio(frame, img){
+    if(!img.naturalWidth || !img.naturalHeight){
+        return;
+    }
+
+    frame.style.aspectRatio = `${img.naturalWidth} / ${img.naturalHeight}`;
+}
+
+clearImage.addEventListener("load", () => {
+    setFrameRatio(clearImageFrame, clearImage);
+});
+
+function appendTokenToUrl(url){
+    const token = getCurrentToken();
+
+    if(!token){
+        return url;
+    }
+
+    const separator = url.includes("?") ? "&" : "?";
+
+    return url + separator + "token=" + encodeURIComponent(token);
+}
+
+async function initClearAuth(){
+    addAuthLog("Clear page authorization started.");
+
+    const token = getCurrentToken();
+
+    if(!TOKEN_API_URL || TOKEN_API_URL === "ここにApps ScriptのURLを入れる"){
+        authMessage.innerHTML =
+            '<span class="auth-error">TOKEN_API_URLが設定されていません。</span>';
+        return;
+    }
+
+    if(!token){
+        authMessage.innerHTML =
+            '<span class="auth-error">チケットURLからアクセスしてください。</span>';
+        addAuthLog("Token not found.");
+        return;
+    }
+
+    const deviceId = getOrCreateDeviceId();
+
+    addAuthLog("Device ID confirmed.");
+    addAuthLog("Sending clearPage action...");
+
+    try{
+        const result = await callTicketApi("clearPage", token, deviceId);
+
+        if(!result.ok){
+            authMessage.innerHTML =
+                '<span class="auth-error">' +
+                (result.message || "クリアページを表示できません。") +
+                '</span>';
+
+            addAuthLog("Authorization denied.");
+            return;
+        }
+
+        if(result.expiresAt){
+            showExpiryBar(result.expiresAt);
+        }else{
+            showExpiryBar("");
+        }
+
+        addAuthLog("Clear page granted.");
+        authScreen.classList.add("hidden");
+
+    }catch(error){
+        console.error(error);
+
+        authMessage.innerHTML =
+            '<span class="auth-error">通信エラーが発生しました。時間を置いて再度お試しください。</span>';
+
+        addAuthLog("Network error.");
+    }
+}
+
+xButton.addEventListener("click", () => {
+    window.open(X_REPORT_URL, "_blank", "noopener,noreferrer");
+});
+
+formButton.addEventListener("click", () => {
+    window.open(appendTokenToUrl(FORM_URL), "_blank", "noopener,noreferrer");
+});
+
+initClearAuth();
+</script>
+
+</body>
+</html>
