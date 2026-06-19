@@ -50,7 +50,6 @@ body::before{
     z-index:99;
 }
 
-
 .expiry-bar{
     position:fixed;
     top:0;
@@ -479,7 +478,6 @@ body.release-effect .container{
 }
 
 @media(max-width:600px){
-
     .expiry-bar{
         flex-direction:column;
         gap:2px;
@@ -713,7 +711,7 @@ body.release-effect .container{
             </button>
 
             <button id="resetButton" class="small-button">
-                スタッフ専用ボタン
+                進行状況をリセットする
             </button>
         </div>
 
@@ -724,22 +722,12 @@ body.release-effect .container{
 </div>
 
 <script>
-/* =========================
-   ここを変更してください
-========================= */
-
 const TOKEN_API_URL = "https://script.google.com/macros/s/AKfycbxQlmn_aMq-6ny0Io4iGbBHFXcU6vRxYt6BGk9MeLbZjppsqWlujis-bMdFRXciMZtt/exec";
 const GAME_ID = "select-answer";
 
-// ゲーム本体は同じGitHubリポジトリ内の game.html に置く想定です。
 const GAME_URL = "game.html";
-
-// ヒントサイトはGoogle SitesのままでもOKです。
+const CLEAR_URL = "clear.html";
 const HINT_URL = "https://sites.google.com/view/make-ai-game/hint";
-
-/* =========================
-   基本設定
-========================= */
 
 const RELEASE_DATE = new Date("2026-07-07T00:00:00+09:00");
 
@@ -808,10 +796,6 @@ make-huaiやai-humanの統合管理システムです。`,
     }
 ];
 
-/* =========================
-   要素取得
-========================= */
-
 const expiryBar = document.getElementById("expiryBar");
 const expiryBarText = document.getElementById("expiryBarText");
 
@@ -852,10 +836,6 @@ const rescueError = document.getElementById("rescueError");
 const rescueSubmitButton = document.getElementById("rescueSubmitButton");
 const rescueCloseButton = document.getElementById("rescueCloseButton");
 
-/* =========================
-   保存データ
-========================= */
-
 let saveData = {
     unlocked:false,
     dialogIndex:0
@@ -890,10 +870,28 @@ function saveProgress(){
     );
 }
 
-/* =========================
-   チケット認証
-========================= */
+function getTokenFromUrl(){
+    const params = new URLSearchParams(location.search);
+    return params.get("token");
+}
 
+function goToClearPage(token){
+    if(token){
+        location.href = CLEAR_URL + "?token=" + encodeURIComponent(token);
+    }else{
+        location.href = CLEAR_URL;
+    }
+}
+
+function goToGamePage(){
+    const token = localStorage.getItem(TOKEN_KEY);
+
+    if(token){
+        location.href = GAME_URL + "?token=" + encodeURIComponent(token);
+    }else{
+        location.href = GAME_URL;
+    }
+}
 
 function showExpiryBar(expiresAtValue){
     if(!expiresAtValue){
@@ -951,11 +949,6 @@ function addTicketLog(message){
     ticketLog.scrollTop = ticketLog.scrollHeight;
 }
 
-function getTokenFromUrl(){
-    const params = new URLSearchParams(location.search);
-    return params.get("token");
-}
-
 function maskToken(token){
     if(!token){
         return "--";
@@ -987,6 +980,7 @@ function getOrCreateDeviceId(){
 function verifyTicket(token, deviceId){
     return new Promise((resolve, reject) => {
         const callbackName = "ticketCallback_" + Date.now() + "_" + Math.random().toString(36).slice(2);
+        const script = document.createElement("script");
 
         window[callbackName] = function(data){
             resolve(data);
@@ -1004,8 +998,6 @@ function verifyTicket(token, deviceId){
             "&token=" + encodeURIComponent(token) +
             "&gameId=" + encodeURIComponent(GAME_ID) +
             "&deviceId=" + encodeURIComponent(deviceId);
-
-        const script = document.createElement("script");
 
         script.src = url;
 
@@ -1030,7 +1022,7 @@ async function initTicketAuth(){
 
     addTicketLog("Ticket verification started.");
 
-    if(!TOKEN_API_URL || TOKEN_API_URL === "ここにApps ScriptのURLを入れる"){
+    if(!TOKEN_API_URL || TOKEN_API_URL === "https://script.google.com/macros/s/AKfycbxQlmn_aMq-6ny0Io4iGbBHFXcU6vRxYt6BGk9MeLbZjppsqWlujis-bMdFRXciMZtt/exec"){
         showTicketError("TOKEN_API_URLが設定されていません。運営側の設定を確認してください。");
         return;
     }
@@ -1048,57 +1040,63 @@ async function initTicketAuth(){
     try{
         const result = await verifyTicket(token, deviceId);
 
-        if(result.ok){
-            ticketAuthState.textContent = "GRANTED";
-            ticketMessage.textContent = "チケット認証に成功しました。";
-            addTicketLog("Ticket authorization granted.");
+        if(!result.ok){
+            if(result.code === "TOKEN_CLEARED" || result.clearOnly){
+                localStorage.setItem(TOKEN_KEY, token);
+                addTicketLog("This token is already cleared. Redirecting to clear page...");
+                goToClearPage(token);
+                return;
+            }
 
-            if(result.expiresAt){
-                showExpiryBar(result.expiresAt);
-
-    const expiresAt = new Date(result.expiresAt);
-
-    let serverNowText = "";
-
-    if(result.serverNow){
-        const serverNow = new Date(result.serverNow);
-
-        serverNowText =
-            "\nサーバー確認時刻：" +
-            serverNow.toLocaleString("ja-JP", {
-                year:"numeric",
-                month:"2-digit",
-                day:"2-digit",
-                hour:"2-digit",
-                minute:"2-digit"
-            });
-    }
-
-    expiresMessage.textContent =
-        "有効期限：" +
-        expiresAt.toLocaleString("ja-JP", {
-            year:"numeric",
-            month:"2-digit",
-            day:"2-digit",
-            hour:"2-digit",
-            minute:"2-digit"
-        }) +
-        " まで" +
-        serverNowText +
-        "\n\n※ 有効期限は端末時刻ではなく、サーバー時間を基準に管理されています。" +
-        "\n※ 端末の日付変更はゲーム内演出にのみ使用されます。";
-}
-
-            localStorage.setItem(TOKEN_KEY, token);
-
-            setTimeout(() => {
-                startMainPage();
-            }, 900);
-
+            showTicketError(result.message || "チケット認証に失敗しました。");
             return;
         }
 
-        showTicketError(result.message || "チケット認証に失敗しました。");
+        localStorage.setItem(TOKEN_KEY, token);
+
+        ticketAuthState.textContent = "GRANTED";
+        ticketMessage.textContent = "チケット認証に成功しました。";
+        addTicketLog("Ticket authorization granted.");
+
+        if(result.expiresAt){
+            showExpiryBar(result.expiresAt);
+
+            const expiresAt = new Date(result.expiresAt);
+
+            let serverNowText = "";
+
+            if(result.serverNow){
+                const serverNow = new Date(result.serverNow);
+
+                serverNowText =
+                    "\nサーバー確認時刻：" +
+                    serverNow.toLocaleString("ja-JP", {
+                        year:"numeric",
+                        month:"2-digit",
+                        day:"2-digit",
+                        hour:"2-digit",
+                        minute:"2-digit"
+                    });
+            }
+
+            expiresMessage.textContent =
+                "有効期限：" +
+                expiresAt.toLocaleString("ja-JP", {
+                    year:"numeric",
+                    month:"2-digit",
+                    day:"2-digit",
+                    hour:"2-digit",
+                    minute:"2-digit"
+                }) +
+                " まで" +
+                serverNowText +
+                "\n\n※ 有効期限は端末時刻ではなく、サーバー時間を基準に管理されています。" +
+                "\n※ 端末の日付変更はゲーム内演出にのみ使用されます。";
+        }
+
+        setTimeout(() => {
+            startMainPage();
+        }, 900);
 
     }catch(error){
         console.error(error);
@@ -1113,10 +1111,6 @@ function showTicketError(message){
     showScreen(ticketErrorScreen);
 }
 
-/* =========================
-   画面制御
-========================= */
-
 function showScreen(screen){
     ticketScreen.classList.remove("active");
     ticketErrorScreen.classList.remove("active");
@@ -1125,10 +1119,6 @@ function showScreen(screen){
 
     screen.classList.add("active");
 }
-
-/* =========================
-   メインゲーム処理
-========================= */
 
 function addLog(message){
     const time = new Date().toLocaleTimeString("ja-JP");
@@ -1465,23 +1455,21 @@ startButton.addEventListener("click", () => {
     `);
 
     setTimeout(() => {
-    const token = localStorage.getItem("riddle_story_current_token_select-answer");
+        const token = localStorage.getItem(TOKEN_KEY);
 
-    if(token){
-        const separator = GAME_URL.includes("?") ? "&" : "?";
+        if(token){
+            newTab.location.href =
+                GAME_URL +
+                "?token=" +
+                encodeURIComponent(token);
+        }else{
+            newTab.location.href = GAME_URL;
+        }
 
-        newTab.location.href =
-            GAME_URL +
-            separator +
-            "token=" +
-            encodeURIComponent(token);
-    }else{
-        newTab.location.href = GAME_URL;
-    }
-
-    startButton.disabled = false;
-    startButton.textContent = "このボタンを押してください";
-}, 1000);
+        startButton.disabled = false;
+        startButton.textContent = "このボタンを押してください";
+    }, 1000);
+});
 
 resetButton.addEventListener("click", () => {
     const ok = confirm("本当に進行状況をリセットしますか？");
@@ -1535,10 +1523,6 @@ function startMainPage(){
         showScreen(lockScreen);
     }
 }
-
-/* =========================
-   起動
-========================= */
 
 initTicketAuth();
 </script>
