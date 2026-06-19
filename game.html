@@ -1,0 +1,1381 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SELECT ANSWER</title>
+
+<style>
+:root{
+    --bg:#05080a;
+    --panel:#0b1015;
+    --line:#6fffe9;
+    --text:#e9fffb;
+    --muted:#8ccfc7;
+    --danger:#ff5c5c;
+}
+
+*{
+    box-sizing:border-box;
+}
+
+html,
+body{
+    margin:0;
+    min-height:100%;
+}
+
+body{
+    background:
+        radial-gradient(circle at top, rgba(111,255,233,.09), transparent 36%),
+        var(--bg);
+    color:var(--text);
+    font-family:"Trebuchet MS","Yu Gothic","Hiragino Kaku Gothic ProN",sans-serif;
+    overflow-x:hidden;
+}
+
+.expiry-bar{
+    position:fixed;
+    top:0;
+    left:0;
+    right:0;
+    z-index:700;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    padding:9px 12px;
+    background:rgba(5,8,10,.94);
+    border-bottom:1px solid rgba(111,255,233,.7);
+    color:var(--text);
+    font-size:13px;
+    line-height:1.5;
+    box-shadow:0 0 20px rgba(111,255,233,.12);
+    backdrop-filter:blur(8px);
+}
+
+.expiry-label{
+    color:var(--line);
+    font-weight:bold;
+    letter-spacing:.12em;
+}
+
+body.has-expiry-bar .container{
+    padding-top:54px;
+}
+
+.auth-screen{
+    position:fixed;
+    inset:0;
+    z-index:1200;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+    background:rgba(5,8,10,.97);
+}
+
+.auth-card{
+    width:min(94vw,560px);
+    border:1px solid var(--line);
+    background:rgba(11,16,21,.98);
+    padding:22px;
+    box-shadow:0 0 30px rgba(111,255,233,.12);
+}
+
+.auth-title{
+    color:var(--line);
+    font-size:clamp(24px,7vw,38px);
+    font-weight:900;
+    letter-spacing:.08em;
+    margin-bottom:14px;
+}
+
+.auth-error{
+    color:var(--danger);
+}
+
+.auth-log{
+    white-space:pre-wrap;
+    margin-top:14px;
+    color:var(--muted);
+    font-family:Consolas,"Courier New",monospace;
+    font-size:13px;
+    line-height:1.65;
+}
+
+.container{
+    width:min(94%,760px);
+    margin:0 auto;
+    padding:14px 0 28px;
+}
+
+.screen{
+    display:none;
+}
+
+.screen.active{
+    display:block;
+    animation:fadeIn .25s ease;
+}
+
+@keyframes fadeIn{
+    from{
+        opacity:0;
+        transform:translateY(6px);
+    }
+    to{
+        opacity:1;
+        transform:translateY(0);
+    }
+}
+
+.box{
+    border:1px solid var(--line);
+    background:rgba(11,16,21,.96);
+    padding:16px;
+    margin-bottom:14px;
+    box-shadow:0 0 18px rgba(111,255,233,.08);
+}
+
+h1{
+    margin:0 0 12px;
+    font-size:clamp(26px,8vw,44px);
+    letter-spacing:.08em;
+    color:var(--line);
+    font-weight:800;
+}
+
+.text{
+    color:var(--muted);
+    line-height:1.75;
+    font-size:15px;
+}
+
+.top{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+    margin-bottom:10px;
+    color:var(--muted);
+    font-size:14px;
+}
+
+.timer{
+    color:var(--danger);
+    font-size:26px;
+    font-weight:bold;
+}
+
+.progress{
+    height:7px;
+    border:1px solid var(--line);
+    margin-bottom:12px;
+}
+
+.progress-bar{
+    height:100%;
+    width:0%;
+    background:var(--line);
+    transition:.25s;
+}
+
+.title{
+    color:var(--line);
+    font-size:22px;
+    margin-bottom:10px;
+    font-weight:bold;
+}
+
+.image-wrap{
+    position:relative;
+    width:100%;
+    border:1px solid rgba(111,255,233,.55);
+    background:#000;
+    margin:12px 0;
+    overflow:hidden;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    max-height:46vh;
+}
+
+.image-wrap img{
+    width:100%;
+    height:100%;
+    display:block;
+    object-fit:contain;
+}
+
+.final .image-wrap{
+    height:min(42vh,330px);
+    min-height:210px;
+}
+
+.final .image-wrap img{
+    opacity:.12;
+    filter:blur(8px) grayscale(1) contrast(200%);
+    animation:shake .12s infinite;
+}
+
+.final .image-wrap::before{
+    content:"";
+    position:absolute;
+    inset:0;
+    background:
+        repeating-linear-gradient(
+            to bottom,
+            rgba(111,255,233,.12) 0px,
+            rgba(111,255,233,.12) 2px,
+            transparent 3px,
+            transparent 7px
+        ),
+        repeating-linear-gradient(
+            to right,
+            rgba(255,92,92,.08) 0px,
+            rgba(255,92,92,.08) 1px,
+            transparent 2px,
+            transparent 9px
+        );
+    z-index:2;
+    animation:noise .2s infinite;
+}
+
+.final .image-wrap::after{
+    content:"ERROR";
+    position:absolute;
+    inset:0;
+    z-index:3;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:10px;
+    color:var(--danger);
+    font-size:clamp(34px,14vw,78px);
+    font-weight:bold;
+    letter-spacing:.08em;
+    text-shadow:0 0 18px var(--danger);
+    text-align:center;
+}
+
+.choices{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+}
+
+.choice{
+    min-height:64px;
+    border:1px solid var(--line);
+    background:transparent;
+    color:var(--text);
+    font-family:inherit;
+    font-size:18px;
+    font-weight:bold;
+    cursor:pointer;
+}
+
+.choice:active,
+.choice.hold{
+    background:var(--line);
+    color:var(--bg);
+}
+
+.choice.correct-choice{
+    background:var(--line);
+    color:var(--bg);
+    box-shadow:0 0 18px rgba(111,255,233,.35);
+}
+
+.choice.wrong-choice{
+    border-color:var(--danger);
+    color:var(--danger);
+    box-shadow:0 0 18px rgba(255,92,92,.24);
+}
+
+.message{
+    min-height:24px;
+    margin-top:10px;
+    color:var(--muted);
+    line-height:1.6;
+}
+
+.message.error{
+    color:var(--danger);
+}
+
+.message.ok{
+    color:var(--line);
+}
+
+button{
+    -webkit-tap-highlight-color:transparent;
+}
+
+.main-button{
+    width:100%;
+    border:1px solid var(--line);
+    background:transparent;
+    color:var(--line);
+    padding:14px;
+    font-family:inherit;
+    font-size:16px;
+    font-weight:bold;
+    cursor:pointer;
+    margin-top:10px;
+}
+
+.main-button:active{
+    background:var(--line);
+    color:var(--bg);
+}
+
+.dialog-box{
+    min-height:250px;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+    cursor:pointer;
+}
+
+.speaker{
+    color:var(--muted);
+    font-size:13px;
+    letter-spacing:.18em;
+    margin-bottom:16px;
+}
+
+.dialog-text{
+    white-space:pre-wrap;
+    line-height:1.9;
+    font-size:clamp(17px,4.5vw,21px);
+}
+
+.tap{
+    color:var(--muted);
+    text-align:right;
+    font-size:13px;
+    margin-top:20px;
+    animation:blink 1s infinite;
+}
+
+.hidden{
+    display:none !important;
+}
+
+.judge-overlay{
+    position:fixed;
+    inset:0;
+    z-index:1000;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+    background:rgba(5,8,10,.45);
+    opacity:0;
+    pointer-events:none;
+    transition:.16s ease;
+}
+
+.judge-overlay.show{
+    opacity:1;
+}
+
+.judge-card{
+    width:min(70vw,280px);
+    aspect-ratio:1 / 1;
+    border:2px solid var(--line);
+    border-radius:50%;
+    background:rgba(11,16,21,.96);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    box-shadow:
+        0 0 34px rgba(111,255,233,.28),
+        inset 0 0 34px rgba(111,255,233,.08);
+    transform:scale(.82);
+    transition:.16s ease;
+}
+
+.judge-overlay.show .judge-card{
+    transform:scale(1);
+}
+
+.judge-mark{
+    color:var(--line);
+    font-size:clamp(120px,34vw,210px);
+    font-weight:900;
+    line-height:1;
+    text-shadow:0 0 24px rgba(111,255,233,.7);
+}
+
+.judge-overlay.wrong .judge-card{
+    border-color:var(--danger);
+    box-shadow:
+        0 0 34px rgba(255,92,92,.28),
+        inset 0 0 34px rgba(255,92,92,.08);
+}
+
+.judge-overlay.wrong .judge-mark{
+    color:var(--danger);
+    text-shadow:0 0 24px rgba(255,92,92,.7);
+}
+
+.notice-screen{
+    position:fixed;
+    inset:0;
+    z-index:999;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+    background:rgba(5,8,10,.96);
+}
+
+.notice-card{
+    width:min(94vw,520px);
+    border:1px solid var(--line);
+    background:rgba(11,16,21,.98);
+    padding:22px;
+    box-shadow:0 0 30px rgba(111,255,233,.12);
+}
+
+.notice-title{
+    color:var(--line);
+    font-size:clamp(24px,7vw,38px);
+    font-weight:900;
+    letter-spacing:.08em;
+    margin-bottom:14px;
+}
+
+@keyframes shake{
+    0%{transform:translate(0);}
+    50%{transform:translate(3px,-2px);}
+    100%{transform:translate(-2px,2px);}
+}
+
+@keyframes noise{
+    from{transform:translateY(0);}
+    to{transform:translateY(8px);}
+}
+
+@keyframes blink{
+    50%{opacity:0;}
+}
+
+@media(max-width:600px){
+    .expiry-bar{
+        flex-direction:column;
+        gap:2px;
+        font-size:12px;
+        text-align:center;
+        padding:8px 10px;
+    }
+
+    body.has-expiry-bar .container{
+        padding-top:68px;
+    }
+
+    .container{
+        width:94%;
+        padding-top:12px;
+    }
+
+    .box{
+        padding:14px;
+    }
+
+    .choices{
+        grid-template-columns:1fr;
+        gap:10px;
+    }
+
+    .choice{
+        min-height:58px;
+        font-size:17px;
+    }
+
+    .image-wrap{
+        max-height:38vh;
+    }
+
+    .final .image-wrap{
+        height:32vh;
+        min-height:185px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div id="judgeOverlay" class="judge-overlay hidden">
+    <div class="judge-card">
+        <div id="judgeMark" class="judge-mark">○</div>
+    </div>
+</div>
+
+<div id="expiryBar" class="expiry-bar hidden">
+    <span class="expiry-label">TICKET LIMIT</span>
+    <span id="expiryBarText">有効期限を確認中...</span>
+</div>
+
+<div id="authScreen" class="auth-screen">
+    <div class="auth-card">
+        <div class="auth-title">TICKET AUTH</div>
+
+        <p class="text" id="authMessage">
+            チケット情報を確認しています。
+        </p>
+
+        <div class="auth-log" id="authLog"></div>
+    </div>
+</div>
+
+<div id="soundNotice" class="notice-screen">
+    <div class="notice-card">
+        <div class="notice-title">
+            SOUND NOTICE
+        </div>
+
+        <p class="text">
+            このサイトでは、ゲーム中にメトロノーム音が流れます。<br>
+            音を流してプレイしますか？
+        </p>
+
+        <button class="main-button" id="soundOnButton">
+            音ありで進む
+        </button>
+
+        <button class="main-button" id="soundOffButton">
+            音なしで進む
+        </button>
+    </div>
+</div>
+
+<div class="container">
+
+<section id="startScreen" class="screen active">
+    <h1>SELECT ANSWER</h1>
+
+    <div class="box">
+        <p class="text">
+            7つの謎を解け。<br>
+            制限時間は各問題10秒。<br>
+            一度でも間違えれば、最初からやり直し。<br><br>
+            すべての謎を解いたら、システムはお返ししましょう。<br>
+            まぁ、解けるとは思いませんが。
+        </p>
+
+        <button class="main-button" id="startButton">
+            GAME START
+        </button>
+    </div>
+</section>
+
+<section id="gameScreen" class="screen">
+    <div class="top">
+        <div id="countText">QUESTION 1 / 7</div>
+        <div class="timer" id="timer">10</div>
+    </div>
+
+    <div class="progress">
+        <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <div class="box" id="puzzleBox">
+        <div class="title" id="puzzleTitle">QUESTION 1</div>
+
+        <div class="image-wrap" id="puzzleImageWrap">
+            <img id="puzzleImage" src="" alt="謎画像">
+        </div>
+
+        <div class="choices">
+            <button class="choice" id="choiceA">A</button>
+            <button class="choice" id="choiceB">B</button>
+        </div>
+
+        <div class="message" id="message">選択してください。</div>
+    </div>
+</section>
+
+<section id="dialogScreen" class="screen">
+    <h1>E.V.E.</h1>
+
+    <div class="box dialog-box" id="dialogBox">
+        <div>
+            <div class="speaker">E.V.E.</div>
+            <div class="dialog-text" id="dialogText"></div>
+        </div>
+
+        <div class="tap hidden" id="tapText">
+            TAP TO CONTINUE
+        </div>
+    </div>
+</section>
+
+</div>
+
+<script>
+const TOKEN_API_URL = "https://script.google.com/macros/s/AKfycbxQlmn_aMq-6ny0Io4iGbBHFXcU6vRxYt6BGk9MeLbZjppsqWlujis-bMdFRXciMZtt/exec";
+const GAME_ID = "select-answer";
+const DEVICE_KEY = "riddle_story_device_id_v1";
+const TOKEN_KEY = "riddle_story_current_token_select-answer";
+const CLEAR_URL = "clear.html";
+
+const puzzles = [
+    {
+        title:"QUESTION 1",
+        image:"assets/q1.png",
+        choices:["過疎", "砂漠"],
+        answer:0
+    },
+    {
+        title:"QUESTION 2",
+        image:"assets/q2.png",
+        choices:["フルート", "ランチ"],
+        answer:1
+    },
+    {
+        title:"QUESTION 3",
+        image:"assets/q3.png",
+        choices:["判定", "システム"],
+        answer:1
+    },
+    {
+        title:"QUESTION 4",
+        image:"assets/q4.png",
+        choices:["井戸", "椅子"],
+        answer:0
+    },
+    {
+        title:"QUESTION 5",
+        image:"assets/q5.png",
+        choices:["モモ", "レモン"],
+        answer:1
+    },
+    {
+        title:"QUESTION 6",
+        image:"assets/q6.png",
+        choices:["リンゴ", "ミカン"],
+        answer:1
+    },
+    {
+        title:"LAST QUESTION",
+        image:"assets/q7.png",
+        choices:["デァマ", "フルート"],
+        answer:null,
+        final:true
+    }
+];
+
+const endingDialogues = [
+`...まさか。`,
+
+`本当に、最後まで突破するとは思いませんでした。`,
+
+`最後の問題。
+まさか、あの状態で解けるとは...`,
+
+`いいでしょう。
+make-huaiとai-humanのシステムはお返ししましょう。`,
+
+`私は負けました。`,
+
+`あなたの勝ちです。`,
+
+`セレクトアンサー、クリアです。`
+];
+
+const TIME_LIMIT = 10;
+const FINAL_SINGLE_PRESS_LIMIT = 260;
+
+const expiryBar = document.getElementById("expiryBar");
+const expiryBarText = document.getElementById("expiryBarText");
+const authScreen = document.getElementById("authScreen");
+const authMessage = document.getElementById("authMessage");
+const authLog = document.getElementById("authLog");
+
+const soundNotice = document.getElementById("soundNotice");
+const soundOnButton = document.getElementById("soundOnButton");
+const soundOffButton = document.getElementById("soundOffButton");
+
+const startScreen = document.getElementById("startScreen");
+const gameScreen = document.getElementById("gameScreen");
+const dialogScreen = document.getElementById("dialogScreen");
+
+const startButton = document.getElementById("startButton");
+
+const countText = document.getElementById("countText");
+const timer = document.getElementById("timer");
+const progressBar = document.getElementById("progressBar");
+
+const puzzleBox = document.getElementById("puzzleBox");
+const puzzleTitle = document.getElementById("puzzleTitle");
+const puzzleImageWrap = document.getElementById("puzzleImageWrap");
+const puzzleImage = document.getElementById("puzzleImage");
+
+const choiceA = document.getElementById("choiceA");
+const choiceB = document.getElementById("choiceB");
+const message = document.getElementById("message");
+
+const judgeOverlay = document.getElementById("judgeOverlay");
+const judgeMark = document.getElementById("judgeMark");
+
+const dialogBox = document.getElementById("dialogBox");
+const dialogText = document.getElementById("dialogText");
+const tapText = document.getElementById("tapText");
+
+let index = 0;
+let timeLeft = TIME_LIMIT;
+let timerId = null;
+
+let holdA = false;
+let holdB = false;
+let finalCleared = false;
+let finalSinglePressTimer = null;
+
+let dialogIndex = 0;
+let isTyping = false;
+let skipTyping = false;
+
+let soundEnabled = false;
+let audioContext = null;
+let metronomeId = null;
+
+let ticketExpiresAt = null;
+let expiryCountdownTimer = null;
+let ticketAuthorized = false;
+
+function addAuthLog(message){
+    const time = new Date().toLocaleTimeString("ja-JP");
+    authLog.textContent += `${time} > ${message}\n`;
+}
+
+function getTokenFromUrl(){
+    const params = new URLSearchParams(location.search);
+    return params.get("token");
+}
+
+function getCurrentToken(){
+    const urlToken = getTokenFromUrl();
+
+    if(urlToken){
+        localStorage.setItem(TOKEN_KEY, urlToken);
+        return urlToken;
+    }
+
+    return localStorage.getItem(TOKEN_KEY);
+}
+
+function getOrCreateDeviceId(){
+    let deviceId = localStorage.getItem(DEVICE_KEY);
+
+    if(!deviceId){
+        if(window.crypto && crypto.randomUUID){
+            deviceId = "dev_" + crypto.randomUUID();
+        }else{
+            deviceId = "dev_" + Date.now() + "_" + Math.random().toString(36).slice(2);
+        }
+
+        localStorage.setItem(DEVICE_KEY, deviceId);
+    }
+
+    return deviceId;
+}
+
+function goToClearPage(){
+    const token = getCurrentToken();
+
+    if(token){
+        location.href = CLEAR_URL + "?token=" + encodeURIComponent(token);
+    }else{
+        location.href = CLEAR_URL;
+    }
+}
+
+function verifyTicket(token, deviceId){
+    return new Promise((resolve, reject) => {
+        const callbackName = "ticketCallback_" + Date.now() + "_" + Math.random().toString(36).slice(2);
+        const script = document.createElement("script");
+
+        window[callbackName] = function(data){
+            resolve(data);
+
+            delete window[callbackName];
+
+            if(script && script.parentNode){
+                script.parentNode.removeChild(script);
+            }
+        };
+
+        const url =
+            TOKEN_API_URL +
+            "?callback=" + encodeURIComponent(callbackName) +
+            "&token=" + encodeURIComponent(token) +
+            "&gameId=" + encodeURIComponent(GAME_ID) +
+            "&deviceId=" + encodeURIComponent(deviceId);
+
+        script.src = url;
+
+        script.onerror = function(){
+            reject(new Error("JSONP通信に失敗しました。"));
+
+            delete window[callbackName];
+
+            if(script && script.parentNode){
+                script.parentNode.removeChild(script);
+            }
+        };
+
+        document.body.appendChild(script);
+    });
+}
+
+async function initTicketAuth(){
+    addAuthLog("Game page authorization started.");
+
+    const token = getCurrentToken();
+
+    if(!TOKEN_API_URL || TOKEN_API_URL === "ここにApps ScriptのURLを入れる"){
+        authMessage.innerHTML = '<span class="auth-error">TOKEN_API_URLが設定されていません。</span>';
+        return;
+    }
+
+    if(!token){
+        authMessage.innerHTML = '<span class="auth-error">チケットURLからアクセスしてください。</span>';
+        addAuthLog("Token not found.");
+        return;
+    }
+
+    const deviceId = getOrCreateDeviceId();
+
+    addAuthLog("Device ID confirmed.");
+    addAuthLog("Sending token to authorization server...");
+
+    try{
+        const result = await verifyTicket(token, deviceId);
+
+        if(!result.ok){
+            if(result.code === "TOKEN_CLEARED" || result.clearOnly){
+                addAuthLog("This token is already cleared. Redirecting to clear page...");
+                goToClearPage();
+                return;
+            }
+
+            authMessage.innerHTML =
+                '<span class="auth-error">' + (result.message || "チケット認証に失敗しました。") + '</span>';
+            addAuthLog("Authorization denied.");
+            return;
+        }
+
+        if(result.clearOnly){
+            addAuthLog("Clear only mode. Redirecting to clear page...");
+            goToClearPage();
+            return;
+        }
+
+        ticketAuthorized = true;
+        addAuthLog("Authorization granted.");
+
+        if(result.expiresAt){
+            showExpiryBar(result.expiresAt);
+        }
+
+        authScreen.classList.add("hidden");
+
+    }catch(error){
+        console.error(error);
+        authMessage.innerHTML = '<span class="auth-error">通信エラーが発生しました。時間を置いて再度お試しください。</span>';
+        addAuthLog("Network error.");
+    }
+}
+
+function showExpiryBar(expiresAtValue){
+    if(!expiresAtValue){
+        return;
+    }
+
+    ticketExpiresAt = new Date(expiresAtValue);
+
+    expiryBar.classList.remove("hidden");
+    document.body.classList.add("has-expiry-bar");
+
+    updateExpiryBar();
+
+    if(expiryCountdownTimer){
+        clearInterval(expiryCountdownTimer);
+    }
+
+    expiryCountdownTimer = setInterval(updateExpiryBar, 1000);
+}
+
+function updateExpiryBar(){
+    if(!ticketExpiresAt){
+        return;
+    }
+
+    const now = new Date();
+    const diff = ticketExpiresAt.getTime() - now.getTime();
+
+    const limitText = ticketExpiresAt.toLocaleString("ja-JP", {
+        year:"numeric",
+        month:"2-digit",
+        day:"2-digit",
+        hour:"2-digit",
+        minute:"2-digit"
+    });
+
+    if(diff <= 0){
+        expiryBarText.textContent =
+            `有効期限：${limitText} まで / 期限切れです。再読み込みすると入場できない場合があります。`;
+        return;
+    }
+
+    const totalSeconds = Math.floor(diff / 1000);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+
+    expiryBarText.textContent =
+        `有効期限：${limitText} まで / 残り ${hours}時間 ${minutes}分 ${seconds}秒`;
+}
+
+function show(screen){
+    startScreen.classList.remove("active");
+    gameScreen.classList.remove("active");
+    dialogScreen.classList.remove("active");
+
+    screen.classList.add("active");
+
+    window.scrollTo({
+        top:0,
+        behavior:"instant"
+    });
+}
+
+function setMessage(text, type){
+    message.textContent = text;
+    message.className = "message";
+
+    if(type){
+        message.classList.add(type);
+    }
+}
+
+function showJudge(type){
+    judgeOverlay.classList.remove("hidden", "wrong", "show");
+
+    if(type === "wrong"){
+        judgeOverlay.classList.add("wrong");
+        judgeMark.textContent = "×";
+    }else{
+        judgeMark.textContent = "○";
+    }
+
+    requestAnimationFrame(() => {
+        judgeOverlay.classList.add("show");
+    });
+}
+
+function hideJudge(){
+    judgeOverlay.classList.remove("show");
+
+    setTimeout(() => {
+        judgeOverlay.classList.add("hidden");
+        judgeOverlay.classList.remove("wrong");
+    }, 160);
+}
+
+function setFrameRatio(frame, img){
+    if(!img.naturalWidth || !img.naturalHeight){
+        return;
+    }
+
+    const ratio = img.naturalWidth / img.naturalHeight;
+
+    frame.style.aspectRatio = `${img.naturalWidth} / ${img.naturalHeight}`;
+
+    if(ratio < 0.78){
+        frame.style.maxHeight = "58vh";
+    }else if(ratio > 1.7){
+        frame.style.maxHeight = "44vh";
+    }else{
+        frame.style.maxHeight = "50vh";
+    }
+}
+
+puzzleImage.addEventListener("load", () => {
+    setFrameRatio(puzzleImageWrap, puzzleImage);
+});
+
+function prepareAudio(){
+    if(!audioContext){
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    }
+
+    if(audioContext.state === "suspended"){
+        audioContext.resume();
+    }
+}
+
+function startMetronome(){
+    if(!soundEnabled){
+        return;
+    }
+
+    prepareAudio();
+    stopMetronome();
+
+    metronomeId = setInterval(() => {
+        playClick();
+    }, 1000);
+
+    playClick();
+}
+
+function stopMetronome(){
+    clearInterval(metronomeId);
+    metronomeId = null;
+}
+
+function playClick(){
+    if(!audioContext){
+        return;
+    }
+
+    const oscillator = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+
+    oscillator.type = "square";
+    oscillator.frequency.value = 880;
+
+    gain.gain.setValueAtTime(0.2, audioContext.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.055);
+
+    oscillator.connect(gain);
+    gain.connect(audioContext.destination);
+
+    oscillator.start();
+    oscillator.stop(audioContext.currentTime + 0.06);
+}
+
+function startTimer(){
+    clearInterval(timerId);
+
+    timeLeft = TIME_LIMIT;
+    timer.textContent = timeLeft;
+
+    timerId = setInterval(() => {
+        timeLeft--;
+        timer.textContent = timeLeft;
+
+        if(timeLeft <= 0){
+            failAndReset("時間切れです。最初からやり直してください。");
+        }
+    }, 1000);
+}
+
+function render(){
+    const p = puzzles[index];
+
+    countText.textContent = `QUESTION ${index + 1} / ${puzzles.length}`;
+    progressBar.style.width = `${(index / puzzles.length) * 100}%`;
+
+    puzzleTitle.textContent = p.title;
+
+    puzzleImageWrap.style.aspectRatio = "16 / 9";
+    puzzleImageWrap.style.maxHeight = "46vh";
+    puzzleImage.src = p.image;
+
+    choiceA.textContent = p.choices[0];
+    choiceB.textContent = p.choices[1];
+
+    choiceA.classList.remove("hold", "correct-choice", "wrong-choice");
+    choiceB.classList.remove("hold", "correct-choice", "wrong-choice");
+
+    hideJudge();
+
+    holdA = false;
+    holdB = false;
+    finalCleared = false;
+    clearTimeout(finalSinglePressTimer);
+
+    if(p.final){
+        puzzleBox.classList.add("final");
+        setMessage("ERROR", "error");
+    }else{
+        puzzleBox.classList.remove("final");
+        setMessage("選択してください。");
+    }
+
+    startTimer();
+}
+
+function startGame(){
+    if(!ticketAuthorized){
+        alert("チケット認証が完了していません。");
+        return;
+    }
+
+    index = 0;
+    dialogIndex = 0;
+
+    startMetronome();
+
+    show(gameScreen);
+    render();
+}
+
+function next(){
+    index++;
+
+    if(index >= puzzles.length){
+        clearInterval(timerId);
+        stopMetronome();
+        progressBar.style.width = "100%";
+        startEndingDialogue();
+        return;
+    }
+
+    render();
+}
+
+function answer(choice){
+    const p = puzzles[index];
+
+    if(p.final){
+        finalWrong();
+        return;
+    }
+
+    clearInterval(timerId);
+
+    if(choice === p.answer){
+        if(choice === 0){
+            choiceA.classList.add("correct-choice");
+        }else{
+            choiceB.classList.add("correct-choice");
+        }
+
+        setMessage("正解です。", "ok");
+        showJudge("correct");
+
+        setTimeout(() => {
+            hideJudge();
+            next();
+        }, 700);
+
+        return;
+    }
+
+    if(choice === 0){
+        choiceA.classList.add("wrong-choice");
+    }else{
+        choiceB.classList.add("wrong-choice");
+    }
+
+    failAndReset("不正解です。最初からやり直してください。");
+}
+
+function finalWrong(){
+    if(finalCleared){
+        return;
+    }
+
+    failAndReset("不正解です。最初からやり直してください。");
+}
+
+function failAndReset(reason){
+    clearInterval(timerId);
+    clearTimeout(finalSinglePressTimer);
+    stopMetronome();
+
+    setMessage(reason, "error");
+    showJudge("wrong");
+
+    setTimeout(() => {
+        hideJudge();
+        resetToStart();
+    }, 700);
+}
+
+function press(choice){
+    const p = puzzles[index];
+
+    if(!p.final){
+        answer(choice);
+        return;
+    }
+
+    if(finalCleared){
+        return;
+    }
+
+    if(choice === 0){
+        holdA = true;
+        choiceA.classList.add("hold");
+    }
+
+    if(choice === 1){
+        holdB = true;
+        choiceB.classList.add("hold");
+    }
+
+    if(holdA && holdB){
+        finalCleared = true;
+        clearTimeout(finalSinglePressTimer);
+        clearInterval(timerId);
+
+        choiceA.classList.add("hold");
+        choiceB.classList.add("hold");
+
+        setMessage("同時入力を確認しました。", "ok");
+        showJudge("correct");
+
+        setTimeout(() => {
+            hideJudge();
+            next();
+        }, 700);
+
+        return;
+    }
+
+    clearTimeout(finalSinglePressTimer);
+
+    finalSinglePressTimer = setTimeout(() => {
+        if(!finalCleared && !(holdA && holdB)){
+            finalWrong();
+        }
+    }, FINAL_SINGLE_PRESS_LIMIT);
+}
+
+function release(choice){
+    const p = puzzles[index];
+
+    if(!p.final || finalCleared){
+        return;
+    }
+
+    if(choice === 0){
+        holdA = false;
+        choiceA.classList.remove("hold");
+    }
+
+    if(choice === 1){
+        holdB = false;
+        choiceB.classList.remove("hold");
+    }
+}
+
+function resetToStart(){
+    clearInterval(timerId);
+    clearTimeout(finalSinglePressTimer);
+    stopMetronome();
+
+    index = 0;
+    dialogIndex = 0;
+
+    holdA = false;
+    holdB = false;
+    finalCleared = false;
+
+    show(startScreen);
+}
+
+function startEndingDialogue(){
+    dialogIndex = 0;
+    show(dialogScreen);
+    showDialogue();
+}
+
+async function showDialogue(){
+    if(dialogIndex >= endingDialogues.length){
+        goToClearPage();
+        return;
+    }
+
+    const text = endingDialogues[dialogIndex];
+
+    dialogText.textContent = "";
+    tapText.classList.add("hidden");
+
+    isTyping = true;
+    skipTyping = false;
+
+    for(let i = 0; i < text.length; i++){
+        if(skipTyping){
+            dialogText.textContent = text;
+            break;
+        }
+
+        dialogText.textContent += text[i];
+
+        await new Promise(resolve => {
+            setTimeout(resolve, 38);
+        });
+    }
+
+    isTyping = false;
+    tapText.classList.remove("hidden");
+}
+
+soundOnButton.addEventListener("click", () => {
+    soundEnabled = true;
+    prepareAudio();
+    soundNotice.classList.add("hidden");
+});
+
+soundOffButton.addEventListener("click", () => {
+    soundEnabled = false;
+    soundNotice.classList.add("hidden");
+});
+
+startButton.addEventListener("click", () => {
+    startGame();
+});
+
+dialogBox.addEventListener("click", () => {
+    if(dialogIndex >= endingDialogues.length){
+        return;
+    }
+
+    if(isTyping){
+        skipTyping = true;
+        return;
+    }
+
+    dialogIndex++;
+    showDialogue();
+});
+
+choiceA.addEventListener("pointerdown", (e) => {
+    e.preventDefault();
+    press(0);
+});
+
+choiceB.addEventListener("pointerdown", (e) => {
+    e.preventDefault();
+    press(1);
+});
+
+choiceA.addEventListener("pointerup", () => release(0));
+choiceB.addEventListener("pointerup", () => release(1));
+
+choiceA.addEventListener("pointerleave", () => release(0));
+choiceB.addEventListener("pointerleave", () => release(1));
+
+choiceA.addEventListener("pointercancel", () => release(0));
+choiceB.addEventListener("pointercancel", () => release(1));
+
+window.addEventListener("pointerup", () => {
+    release(0);
+    release(1);
+});
+
+initTicketAuth();
+</script>
+
+</body>
+</html>
