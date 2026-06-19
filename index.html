@@ -50,6 +50,37 @@ body::before{
     z-index:99;
 }
 
+
+.expiry-bar{
+    position:fixed;
+    top:0;
+    left:0;
+    right:0;
+    z-index:500;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    padding:9px 12px;
+    background:rgba(5,8,10,.94);
+    border-bottom:1px solid rgba(111,255,233,.7);
+    color:var(--text);
+    font-size:13px;
+    line-height:1.5;
+    box-shadow:0 0 20px rgba(111,255,233,.12);
+    backdrop-filter:blur(8px);
+}
+
+.expiry-label{
+    color:var(--line);
+    font-weight:bold;
+    letter-spacing:.12em;
+}
+
+body.has-expiry-bar .container{
+    margin-top:72px;
+}
+
 .container{
     width:min(92%,820px);
     margin:40px auto;
@@ -384,6 +415,10 @@ body.release-effect .container{
     color:var(--danger);
 }
 
+#expiresMessage{
+    white-space:pre-wrap;
+}
+
 @keyframes longPressGauge{
     from{ width:0%; }
     to{ width:100%; }
@@ -444,6 +479,19 @@ body.release-effect .container{
 }
 
 @media(max-width:600px){
+
+    .expiry-bar{
+        flex-direction:column;
+        gap:2px;
+        font-size:12px;
+        text-align:center;
+        padding:8px 10px;
+    }
+
+    body.has-expiry-bar .container{
+        margin-top:88px;
+    }
+
     .container{
         width:94%;
         margin:22px auto;
@@ -475,6 +523,11 @@ body.release-effect .container{
 </head>
 
 <body>
+
+<div id="expiryBar" class="expiry-bar hidden">
+    <span class="expiry-label">TICKET LIMIT</span>
+    <span id="expiryBarText">有効期限を確認中...</span>
+</div>
 
 <div id="rescueModal" class="modal hidden">
     <div class="modal-card">
@@ -759,6 +812,9 @@ make-huaiやai-humanの統合管理システムです。`,
    要素取得
 ========================= */
 
+const expiryBar = document.getElementById("expiryBar");
+const expiryBarText = document.getElementById("expiryBarText");
+
 const ticketScreen = document.getElementById("ticketScreen");
 const ticketErrorScreen = document.getElementById("ticketErrorScreen");
 const lockScreen = document.getElementById("lockScreen");
@@ -806,6 +862,8 @@ let saveData = {
 };
 
 let pauseAutoUnlock = false;
+let ticketExpiresAt = null;
+let expiryCountdownTimer = null;
 
 try{
     const saved = localStorage.getItem(SAVE_KEY);
@@ -835,6 +893,57 @@ function saveProgress(){
 /* =========================
    チケット認証
 ========================= */
+
+
+function showExpiryBar(expiresAtValue){
+    if(!expiresAtValue){
+        return;
+    }
+
+    ticketExpiresAt = new Date(expiresAtValue);
+
+    expiryBar.classList.remove("hidden");
+    document.body.classList.add("has-expiry-bar");
+
+    updateExpiryBar();
+
+    if(expiryCountdownTimer){
+        clearInterval(expiryCountdownTimer);
+    }
+
+    expiryCountdownTimer = setInterval(updateExpiryBar, 1000);
+}
+
+function updateExpiryBar(){
+    if(!ticketExpiresAt){
+        return;
+    }
+
+    const now = new Date();
+    const diff = ticketExpiresAt.getTime() - now.getTime();
+
+    const limitText = ticketExpiresAt.toLocaleString("ja-JP", {
+        year:"numeric",
+        month:"2-digit",
+        day:"2-digit",
+        hour:"2-digit",
+        minute:"2-digit"
+    });
+
+    if(diff <= 0){
+        expiryBarText.textContent =
+            `有効期限：${limitText} まで / 期限切れです。再読み込みすると入場できない場合があります。`;
+        return;
+    }
+
+    const totalSeconds = Math.floor(diff / 1000);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+
+    expiryBarText.textContent =
+        `有効期限：${limitText} まで / 残り ${hours}時間 ${minutes}分 ${seconds}秒`;
+}
 
 function addTicketLog(message){
     const time = new Date().toLocaleTimeString("ja-JP");
@@ -945,6 +1054,8 @@ async function initTicketAuth(){
             addTicketLog("Ticket authorization granted.");
 
             if(result.expiresAt){
+                showExpiryBar(result.expiresAt);
+
     const expiresAt = new Date(result.expiresAt);
 
     let serverNowText = "";
