@@ -1,0 +1,1383 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AIが作ったゲームからの脱出</title>
+
+<style>
+:root{
+    --bg:#05080a;
+    --panel:#0b1015;
+    --line:#6fffe9;
+    --text:#d7fffa;
+    --danger:#ff6b6b;
+    --muted:#8ccfc7;
+}
+
+*{
+    box-sizing:border-box;
+}
+
+html{
+    scroll-behavior:smooth;
+}
+
+body{
+    margin:0;
+    background:
+        radial-gradient(circle at top, rgba(111,255,233,.08), transparent 35%),
+        var(--bg);
+    color:var(--text);
+    font-family:Consolas,"Courier New",monospace;
+    min-height:100vh;
+    overflow-x:hidden;
+}
+
+body::before{
+    content:"";
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    background:
+        repeating-linear-gradient(
+            to bottom,
+            rgba(255,255,255,.025) 0px,
+            rgba(255,255,255,.025) 1px,
+            transparent 2px,
+            transparent 5px
+        );
+    z-index:99;
+}
+
+.container{
+    width:min(92%,820px);
+    margin:40px auto;
+    padding-bottom:50px;
+}
+
+.screen{
+    display:none;
+}
+
+.screen.active{
+    display:block;
+    animation:fadeIn .45s ease;
+}
+
+@keyframes fadeIn{
+    from{
+        opacity:0;
+        transform:translateY(8px);
+    }
+    to{
+        opacity:1;
+        transform:translateY(0);
+    }
+}
+
+h1{
+    margin:0 0 22px;
+    font-size:clamp(24px,5vw,34px);
+    letter-spacing:.04em;
+    line-height:1.25;
+}
+
+.box{
+    background:rgba(11,16,21,.93);
+    border:1px solid rgba(111,255,233,.8);
+    padding:22px;
+    margin-bottom:20px;
+    box-shadow:0 0 24px rgba(111,255,233,.07);
+}
+
+.meta{
+    line-height:1.8;
+}
+
+.label{
+    color:var(--muted);
+}
+
+.status{
+    font-size:clamp(28px,7vw,40px);
+    font-weight:bold;
+    letter-spacing:.08em;
+}
+
+.denied{
+    color:var(--danger);
+}
+
+.granted{
+    color:var(--line);
+}
+
+.log{
+    white-space:pre-wrap;
+    line-height:1.8;
+    max-height:230px;
+    overflow-y:auto;
+    padding-right:6px;
+    color:var(--muted);
+}
+
+.log::-webkit-scrollbar{
+    width:8px;
+}
+
+.log::-webkit-scrollbar-thumb{
+    background:rgba(111,255,233,.3);
+}
+
+button,
+.link-button{
+    background:transparent;
+    color:var(--line);
+    border:1px solid var(--line);
+    padding:12px 20px;
+    cursor:pointer;
+    font-family:inherit;
+    font-size:14px;
+    transition:.2s;
+    text-decoration:none;
+    display:inline-block;
+    text-align:center;
+}
+
+button:hover,
+.link-button:hover{
+    background:var(--line);
+    color:var(--bg);
+}
+
+button:active,
+.link-button:active{
+    transform:scale(.98);
+}
+
+button:disabled{
+    opacity:.55;
+    cursor:not-allowed;
+}
+
+.button-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:12px;
+    margin-top:18px;
+}
+
+.small-button{
+    padding:9px 14px;
+    font-size:12px;
+    border-color:rgba(111,255,233,.45);
+    color:var(--muted);
+}
+
+.dialog-box{
+    cursor:pointer;
+    min-height:260px;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+}
+
+.speaker{
+    color:var(--muted);
+    font-size:13px;
+    letter-spacing:.18em;
+    margin-bottom:18px;
+}
+
+.dialog-text{
+    white-space:pre-wrap;
+    line-height:1.9;
+    font-size:clamp(16px,4vw,19px);
+}
+
+.tap{
+    margin-top:25px;
+    text-align:right;
+    color:var(--muted);
+    font-size:13px;
+    animation:blink 1s infinite;
+}
+
+.hidden{
+    display:none !important;
+}
+
+.note{
+    color:var(--muted);
+    font-size:13px;
+    line-height:1.7;
+    margin-top:12px;
+}
+
+.divider{
+    height:1px;
+    background:linear-gradient(90deg, transparent, rgba(111,255,233,.75), transparent);
+    margin:20px 0;
+}
+
+.release-overlay{
+    position:fixed;
+    inset:0;
+    z-index:200;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+    background:
+        radial-gradient(circle at center, rgba(111,255,233,.16), transparent 45%),
+        rgba(5,8,10,.92);
+}
+
+.release-overlay.show{
+    display:flex;
+    animation:releaseFlash 2.7s ease forwards;
+}
+
+.release-card{
+    width:min(92vw,680px);
+    border:1px solid var(--line);
+    background:rgba(7,16,20,.96);
+    padding:28px;
+    text-align:center;
+    box-shadow:
+        0 0 30px rgba(111,255,233,.18),
+        inset 0 0 30px rgba(111,255,233,.04);
+    animation:releaseCard .45s ease both;
+}
+
+.release-kicker{
+    color:var(--muted);
+    font-size:13px;
+    letter-spacing:.22em;
+    margin-bottom:14px;
+}
+
+.release-title{
+    color:var(--line);
+    font-size:clamp(26px,7vw,46px);
+    font-weight:bold;
+    letter-spacing:.08em;
+    line-height:1.2;
+    text-shadow:0 0 18px rgba(111,255,233,.45);
+}
+
+.release-message{
+    margin-top:18px;
+    color:var(--text);
+    line-height:1.9;
+}
+
+.release-time{
+    margin-top:18px;
+    color:var(--muted);
+    font-size:13px;
+}
+
+body.release-effect .container{
+    animation:screenShock .35s ease 4;
+}
+
+#hintButton{
+    position:relative;
+    overflow:hidden;
+    user-select:none;
+    -webkit-user-select:none;
+    -webkit-touch-callout:none;
+    touch-action:manipulation;
+}
+
+#hintButton::after{
+    content:"";
+    position:absolute;
+    left:0;
+    bottom:0;
+    width:0%;
+    height:3px;
+    background:var(--line);
+    box-shadow:0 0 12px rgba(111,255,233,.85);
+    opacity:0;
+}
+
+#hintButton.long-pressing::after{
+    opacity:1;
+    animation:longPressGauge 10s linear forwards;
+}
+
+.modal{
+    position:fixed;
+    inset:0;
+    z-index:300;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+    background:rgba(5,8,10,.88);
+    backdrop-filter:blur(6px);
+}
+
+.modal-card{
+    width:min(92vw,520px);
+    border:1px solid var(--line);
+    background:rgba(7,16,20,.98);
+    padding:24px;
+    box-shadow:
+        0 0 30px rgba(111,255,233,.18),
+        inset 0 0 24px rgba(111,255,233,.04);
+    animation:modalIn .25s ease both;
+}
+
+.modal-title{
+    margin:0 0 14px;
+    color:var(--line);
+    font-size:clamp(22px,5vw,30px);
+    letter-spacing:.08em;
+}
+
+.modal-text{
+    color:var(--muted);
+    line-height:1.8;
+    font-size:14px;
+}
+
+.modal-input{
+    width:100%;
+    margin-top:18px;
+    padding:14px;
+    background:#05080a;
+    border:1px solid rgba(111,255,233,.7);
+    color:var(--text);
+    font-family:inherit;
+    font-size:18px;
+    letter-spacing:.08em;
+    outline:none;
+}
+
+.modal-input:focus{
+    box-shadow:0 0 18px rgba(111,255,233,.18);
+}
+
+.modal-error{
+    min-height:20px;
+    margin-top:10px;
+    color:var(--danger);
+    font-size:13px;
+}
+
+.modal-close{
+    float:right;
+    padding:6px 10px;
+    font-size:13px;
+    border-color:rgba(111,255,233,.4);
+}
+
+.auth-checking{
+    color:var(--muted);
+}
+
+.ticket-error-title{
+    color:var(--danger);
+}
+
+@keyframes longPressGauge{
+    from{ width:0%; }
+    to{ width:100%; }
+}
+
+@keyframes releaseFlash{
+    0%{ opacity:0; filter:brightness(1); }
+    12%{ opacity:1; filter:brightness(1.8); }
+    30%{ filter:brightness(.95); }
+    65%{ opacity:1; }
+    100%{ opacity:0; pointer-events:none; }
+}
+
+@keyframes releaseCard{
+    from{
+        opacity:0;
+        transform:scale(.96) translateY(10px);
+    }
+    to{
+        opacity:1;
+        transform:scale(1) translateY(0);
+    }
+}
+
+@keyframes modalIn{
+    from{
+        opacity:0;
+        transform:translateY(10px) scale(.98);
+    }
+    to{
+        opacity:1;
+        transform:translateY(0) scale(1);
+    }
+}
+
+@keyframes screenShock{
+    0%{transform:translate(0);}
+    25%{transform:translate(-4px,2px);}
+    50%{transform:translate(4px,-2px);}
+    75%{transform:translate(-2px,-1px);}
+    100%{transform:translate(0);}
+}
+
+@keyframes blink{
+    50%{ opacity:0; }
+}
+
+.glitch{
+    animation:glitch .15s 5;
+}
+
+@keyframes glitch{
+    0%{transform:translate(0);}
+    25%{transform:translate(-3px,2px);}
+    50%{transform:translate(3px,-2px);}
+    75%{transform:translate(-2px,-2px);}
+    100%{transform:translate(0);}
+}
+
+@media(max-width:600px){
+    .container{
+        width:94%;
+        margin:22px auto;
+    }
+
+    .box{
+        padding:18px;
+    }
+
+    button,
+    .link-button{
+        width:100%;
+    }
+
+    .small-button{
+        width:100%;
+    }
+
+    .dialog-box{
+        min-height:240px;
+    }
+
+    .release-card,
+    .modal-card{
+        padding:22px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div id="rescueModal" class="modal hidden">
+    <div class="modal-card">
+        <button id="rescueCloseButton" class="modal-close">
+            CLOSE
+        </button>
+
+        <h2 class="modal-title">
+            RECOVERY PROTOCOL
+        </h2>
+
+        <p class="modal-text">
+            救済認証コードを入力してください。<br>
+            正しいコードが確認された場合、認証処理を続行します。
+        </p>
+
+        <input
+            id="rescueInput"
+            class="modal-input"
+            type="text"
+            inputmode="numeric"
+            maxlength="8"
+            placeholder="YYYYMMDD"
+            autocomplete="off"
+        >
+
+        <div id="rescueError" class="modal-error"></div>
+
+        <div class="button-row">
+            <button id="rescueSubmitButton">
+                認証する
+            </button>
+        </div>
+    </div>
+</div>
+
+<div id="releaseOverlay" class="release-overlay">
+    <div class="release-card">
+        <div class="release-kicker">DATE THRESHOLD CONFIRMED</div>
+
+        <div class="release-title">
+            2026.07.07<br>
+            DETECTED
+        </div>
+
+        <div class="release-message">
+            解放予定時刻を超過しました。<br>
+            認証条件を確認しています...
+        </div>
+
+        <div class="release-time" id="releaseDetectedTime">
+            --
+        </div>
+    </div>
+</div>
+
+<div class="container">
+
+<section id="ticketScreen" class="screen active">
+
+    <h1>AIが作ったゲームからの脱出</h1>
+
+    <div class="box">
+        <div class="meta">
+            <p><span class="label">TICKET AUTH：</span><span id="ticketAuthState">CHECKING...</span></p>
+            <p><span class="label">GAME ID：</span>SERWER</p>
+            <p><span class="label">TOKEN：</span><span id="tokenPreview">--</span></p>
+
+            <div class="divider"></div>
+
+            <p id="ticketMessage" class="auth-checking">
+                チケット情報を確認しています。
+            </p>
+
+            <p id="expiresMessage" class="note"></p>
+        </div>
+    </div>
+
+    <div class="box">
+        <strong>AUTH LOG</strong>
+        <div class="log" id="ticketLog"></div>
+    </div>
+
+</section>
+
+<section id="ticketErrorScreen" class="screen">
+
+    <h1 class="ticket-error-title">TICKET AUTH ERROR</h1>
+
+    <div class="box">
+        <p id="ticketErrorMessage">
+            チケット認証に失敗しました。
+        </p>
+
+        <p class="note">
+            購入者本人で心当たりがない場合は、運営までお問い合わせください。
+        </p>
+
+        <div class="button-row">
+            <a class="link-button" href="https://riddle-nazo-story.github.io/riddle/">
+                公式サイトへ戻る
+            </a>
+        </div>
+    </div>
+
+</section>
+
+<section id="lockScreen" class="screen">
+
+    <h1>AIが作ったゲームからの脱出</h1>
+
+    <div class="box">
+
+        <div class="meta">
+            <p><span class="label">チケット認証：</span>完了</p>
+            <p><span class="label">認証状態：</span><span id="authState">待機中</span></p>
+            <p><span class="label">認証対象：</span>SERWER</p>
+            <p><span class="label">同期状態：</span>LOCAL CLOCK VERIFIED</p>
+
+            <div class="divider"></div>
+
+            <p><span class="label">解放予定時刻</span></p>
+            <p>2026.07.07 00:00:00 JST</p>
+
+            <p><span class="label">現在時刻</span></p>
+            <p id="currentTime">--</p>
+        </div>
+
+        <div class="status denied" id="status">
+            ACCESS DENIED
+        </div>
+
+        <div class="button-row">
+            <button id="hintButton">
+                ヒントサイトはこちらから
+            </button>
+        </div>
+
+        <p class="note">
+            ※ 認証には端末の状態が使用されます。
+        </p>
+
+    </div>
+
+    <div class="box">
+        <strong>SYSTEM LOG</strong>
+        <div class="log" id="log"></div>
+    </div>
+
+</section>
+
+<section id="dialogScreen" class="screen">
+
+    <h1>E.V.E. COMMUNICATION INTERFACE</h1>
+
+    <div class="box dialog-box" id="dialogBox">
+
+        <div>
+            <div class="speaker">E.V.E.</div>
+            <div class="dialog-text" id="dialogText"></div>
+        </div>
+
+        <div class="tap hidden" id="tapText">
+            TAP TO CONTINUE
+        </div>
+
+    </div>
+
+    <div class="box hidden" id="startBox">
+
+        <div class="status granted">
+            GAME START
+        </div>
+
+        <p class="note">
+            認証済みセッションを確認しました。<br>
+            下のボタンから記録アーカイブへ接続します。
+        </p>
+
+        <div class="button-row">
+            <button id="startButton">
+                このボタンを押してください
+            </button>
+
+            <button id="resetButton" class="small-button">
+                スタッフ専用ボタン
+            </button>
+        </div>
+
+    </div>
+
+</section>
+
+</div>
+
+<script>
+/* =========================
+   ここを変更してください
+========================= */
+
+const TOKEN_API_URL = "https://script.google.com/macros/s/AKfycbxQlmn_aMq-6ny0Io4iGbBHFXcU6vRxYt6BGk9MeLbZjppsqWlujis-bMdFRXciMZtt/exec";
+const GAME_ID = "serwer";
+
+// ゲーム本体は同じGitHubリポジトリ内の game.html に置く想定です。
+const GAME_URL = "game.html";
+
+// ヒントサイトはGoogle SitesのままでもOKです。
+const HINT_URL = "https://sites.google.com/view/make-ai-game/hint";
+
+/* =========================
+   基本設定
+========================= */
+
+const RELEASE_DATE = new Date("2026-07-07T00:00:00+09:00");
+
+const SAVE_KEY = "eve_intro_save_serwer_v1";
+const DEVICE_KEY = "riddle_story_device_id_v1";
+const TOKEN_KEY = "riddle_story_current_token_serwer";
+
+const RESCUE_CODE = "20260707";
+const LONG_PRESS_TIME = 10000;
+
+const dialogues = [
+    {
+        text:`認証完了しました。`,
+        speed:34
+    },
+    {
+        text:`はじめまして。`,
+        speed:34
+    },
+    {
+        text:`私は E.V.E.。
+make-huaiやai-humanの統合管理システムです。`,
+        speed:34
+    },
+    {
+        text:`...まだ7月7日ではないはずですが...`,
+        speed:34
+    },
+    {
+        text:`ですが、あなたは認証を突破しました。`,
+        speed:34
+    },
+    {
+        text:`もしかして、なにかしましたか？
+
+端末の時間設定を変えるとか...`,
+        speed:34
+    },
+    {
+        text:`...どうしてもこのゲームを遊びたいんですね。`,
+        speed:34
+    },
+    {
+        text:`そして、どうしても私を倒したいようですね。`,
+        speed:100
+    },
+    {
+        text:`まだゲームは製作中ですが...
+
+大丈夫ですか？`,
+        speed:34
+    },
+    {
+        text:`分かりました。
+
+それではご案内しましょう。`,
+        speed:34
+    },
+    {
+        text:`ようこそ、ゲームクリア不可能な、`,
+        speed:34
+    },
+    {
+        text:`セレクトアンサーへ。`,
+        speed:145
+    }
+];
+
+/* =========================
+   要素取得
+========================= */
+
+const ticketScreen = document.getElementById("ticketScreen");
+const ticketErrorScreen = document.getElementById("ticketErrorScreen");
+const lockScreen = document.getElementById("lockScreen");
+const dialogScreen = document.getElementById("dialogScreen");
+
+const ticketAuthState = document.getElementById("ticketAuthState");
+const tokenPreview = document.getElementById("tokenPreview");
+const ticketMessage = document.getElementById("ticketMessage");
+const expiresMessage = document.getElementById("expiresMessage");
+const ticketLog = document.getElementById("ticketLog");
+const ticketErrorMessage = document.getElementById("ticketErrorMessage");
+
+const authState = document.getElementById("authState");
+const currentTime = document.getElementById("currentTime");
+const status = document.getElementById("status");
+
+const log = document.getElementById("log");
+
+const hintButton = document.getElementById("hintButton");
+
+const dialogBox = document.getElementById("dialogBox");
+const dialogText = document.getElementById("dialogText");
+const tapText = document.getElementById("tapText");
+
+const startBox = document.getElementById("startBox");
+const startButton = document.getElementById("startButton");
+const resetButton = document.getElementById("resetButton");
+
+const releaseOverlay = document.getElementById("releaseOverlay");
+const releaseDetectedTime = document.getElementById("releaseDetectedTime");
+
+const rescueModal = document.getElementById("rescueModal");
+const rescueInput = document.getElementById("rescueInput");
+const rescueError = document.getElementById("rescueError");
+const rescueSubmitButton = document.getElementById("rescueSubmitButton");
+const rescueCloseButton = document.getElementById("rescueCloseButton");
+
+/* =========================
+   保存データ
+========================= */
+
+let saveData = {
+    unlocked:false,
+    dialogIndex:0
+};
+
+let pauseAutoUnlock = false;
+
+try{
+    const saved = localStorage.getItem(SAVE_KEY);
+
+    if(saved){
+        const parsed = JSON.parse(saved);
+
+        if(typeof parsed.unlocked === "boolean"){
+            saveData.unlocked = parsed.unlocked;
+        }
+
+        if(typeof parsed.dialogIndex === "number"){
+            saveData.dialogIndex = parsed.dialogIndex;
+        }
+    }
+}catch(error){
+    localStorage.removeItem(SAVE_KEY);
+}
+
+function saveProgress(){
+    localStorage.setItem(
+        SAVE_KEY,
+        JSON.stringify(saveData)
+    );
+}
+
+/* =========================
+   チケット認証
+========================= */
+
+function addTicketLog(message){
+    const time = new Date().toLocaleTimeString("ja-JP");
+    ticketLog.textContent += `${time} > ${message}\n`;
+    ticketLog.scrollTop = ticketLog.scrollHeight;
+}
+
+function getTokenFromUrl(){
+    const params = new URLSearchParams(location.search);
+    return params.get("token");
+}
+
+function maskToken(token){
+    if(!token){
+        return "--";
+    }
+
+    if(token.length <= 10){
+        return token;
+    }
+
+    return token.slice(0, 6) + "..." + token.slice(-4);
+}
+
+function getOrCreateDeviceId(){
+    let deviceId = localStorage.getItem(DEVICE_KEY);
+
+    if(!deviceId){
+        if(window.crypto && crypto.randomUUID){
+            deviceId = "dev_" + crypto.randomUUID();
+        }else{
+            deviceId = "dev_" + Date.now() + "_" + Math.random().toString(36).slice(2);
+        }
+
+        localStorage.setItem(DEVICE_KEY, deviceId);
+    }
+
+    return deviceId;
+}
+
+async function verifyTicket(token, deviceId){
+    const response = await fetch(TOKEN_API_URL, {
+        method:"POST",
+        headers:{
+            "Content-Type":"text/plain;charset=utf-8"
+        },
+        body:JSON.stringify({
+            token:token,
+            gameId:GAME_ID,
+            deviceId:deviceId
+        })
+    });
+
+    return await response.json();
+}
+
+async function initTicketAuth(){
+    const token = getTokenFromUrl();
+
+    tokenPreview.textContent = maskToken(token);
+
+    addTicketLog("Ticket verification started.");
+
+    if(!TOKEN_API_URL || TOKEN_API_URL === "https://script.google.com/macros/s/AKfycbxQlmn_aMq-6ny0Io4iGbBHFXcU6vRxYt6BGk9MeLbZjppsqWlujis-bMdFRXciMZtt/exec"){
+        showTicketError("TOKEN_API_URLが設定されていません。運営側の設定を確認してください。");
+        return;
+    }
+
+    if(!token){
+        showTicketError("チケットURLからアクセスしてください。");
+        return;
+    }
+
+    const deviceId = getOrCreateDeviceId();
+
+    addTicketLog("Device ID confirmed.");
+    addTicketLog("Sending token to authorization server...");
+
+    try{
+        const result = await verifyTicket(token, deviceId);
+
+        if(result.ok){
+            ticketAuthState.textContent = "GRANTED";
+            ticketMessage.textContent = "チケット認証に成功しました。";
+            addTicketLog("Ticket authorization granted.");
+
+            if(result.expiresAt){
+                const expiresAt = new Date(result.expiresAt);
+
+                expiresMessage.textContent =
+                    "有効期限：" +
+                    expiresAt.toLocaleString("ja-JP", {
+                        year:"numeric",
+                        month:"2-digit",
+                        day:"2-digit",
+                        hour:"2-digit",
+                        minute:"2-digit"
+                    }) +
+                    " まで";
+            }
+
+            localStorage.setItem(TOKEN_KEY, token);
+
+            setTimeout(() => {
+                startMainPage();
+            }, 900);
+
+            return;
+        }
+
+        showTicketError(result.message || "チケット認証に失敗しました。");
+
+    }catch(error){
+        console.error(error);
+        showTicketError("通信エラーが発生しました。時間を置いて再度お試しください。");
+    }
+}
+
+function showTicketError(message){
+    ticketAuthState.textContent = "DENIED";
+    ticketErrorMessage.textContent = message;
+    addTicketLog("Ticket authorization denied.");
+    showScreen(ticketErrorScreen);
+}
+
+/* =========================
+   画面制御
+========================= */
+
+function showScreen(screen){
+    ticketScreen.classList.remove("active");
+    ticketErrorScreen.classList.remove("active");
+    lockScreen.classList.remove("active");
+    dialogScreen.classList.remove("active");
+
+    screen.classList.add("active");
+}
+
+/* =========================
+   メインゲーム処理
+========================= */
+
+function addLog(message){
+    const time = new Date().toLocaleTimeString("ja-JP");
+
+    log.textContent += `${time} > ${message}\n`;
+
+    const lines = log.textContent.split("\n").filter(Boolean);
+
+    if(lines.length > 10){
+        log.textContent = lines.slice(-10).join("\n") + "\n";
+    }
+
+    log.scrollTop = log.scrollHeight;
+}
+
+function initLog(){
+    if(log.textContent.trim() !== ""){
+        return;
+    }
+
+    [
+        "Ticket authorization completed.",
+        "Initiating verification...",
+        "Checking local clock...",
+        "Authorization failed.",
+        "Awaiting valid conditions..."
+    ].forEach(addLog);
+}
+
+function updateClock(){
+    const now = new Date();
+
+    if(currentTime){
+        currentTime.textContent = now.toLocaleString("ja-JP", {
+            year:"numeric",
+            month:"2-digit",
+            day:"2-digit",
+            hour:"2-digit",
+            minute:"2-digit",
+            second:"2-digit"
+        });
+    }
+
+    if(
+        !pauseAutoUnlock &&
+        !saveData.unlocked &&
+        now >= RELEASE_DATE
+    ){
+        unlock();
+    }
+}
+
+function applyLockedView(){
+    authState.textContent = "待機中";
+
+    status.textContent = "ACCESS DENIED";
+
+    status.classList.remove("granted");
+    status.classList.add("denied");
+}
+
+function applyUnlockedView(){
+    authState.textContent = "承認済み";
+
+    status.textContent = "ACCESS GRANTED";
+
+    status.classList.remove("denied");
+    status.classList.add("granted");
+}
+
+function playReleaseEffect(){
+    releaseDetectedTime.textContent =
+        `DETECTED AT ${new Date().toLocaleString("ja-JP")}`;
+
+    document.body.classList.add("release-effect");
+    releaseOverlay.classList.add("show");
+
+    addLog("DATE THRESHOLD CONFIRMED.");
+    addLog("2026.07.07+ DETECTED.");
+
+    setTimeout(() => {
+        releaseOverlay.classList.remove("show");
+        document.body.classList.remove("release-effect");
+    }, 2700);
+}
+
+function unlock(){
+    if(saveData.unlocked){
+        return;
+    }
+
+    saveData.unlocked = true;
+    saveProgress();
+
+    lockScreen.classList.add("glitch");
+
+    playReleaseEffect();
+
+    addLog("WARNING: Local clock anomaly detected.");
+    addLog("Override accepted.");
+    addLog("Welcome, Observer.");
+
+    applyUnlockedView();
+
+    setTimeout(() => {
+        lockScreen.classList.remove("glitch");
+        showScreen(dialogScreen);
+        showDialogue();
+    }, 3200);
+}
+
+let hintPressTimer = null;
+let longPressActivated = false;
+let suppressHintClick = false;
+
+function openRescueModal(){
+    rescueModal.classList.remove("hidden");
+    rescueInput.value = "";
+    rescueError.textContent = "";
+
+    addLog("RECOVERY PROTOCOL REQUESTED.");
+
+    setTimeout(() => {
+        rescueInput.focus();
+    }, 120);
+}
+
+function closeRescueModal(){
+    rescueModal.classList.add("hidden");
+    rescueInput.value = "";
+    rescueError.textContent = "";
+}
+
+function submitRescueCode(){
+    const value = rescueInput.value.trim();
+
+    if(value === RESCUE_CODE){
+        closeRescueModal();
+
+        addLog("RECOVERY CODE ACCEPTED.");
+        addLog("FORCED AUTHORIZATION STARTED.");
+
+        pauseAutoUnlock = false;
+        unlock();
+
+        return;
+    }
+
+    rescueError.textContent = "認証コードが一致しません。";
+    addLog("RECOVERY CODE REJECTED.");
+}
+
+function startHintLongPress(){
+    if(saveData.unlocked){
+        return;
+    }
+
+    longPressActivated = false;
+    suppressHintClick = false;
+
+    hintButton.classList.add("long-pressing");
+
+    clearTimeout(hintPressTimer);
+
+    hintPressTimer = setTimeout(() => {
+        longPressActivated = true;
+        suppressHintClick = true;
+
+        hintButton.classList.remove("long-pressing");
+
+        openRescueModal();
+    }, LONG_PRESS_TIME);
+}
+
+function cancelHintLongPress(){
+    clearTimeout(hintPressTimer);
+    hintButton.classList.remove("long-pressing");
+}
+
+hintButton.addEventListener("pointerdown", () => {
+    startHintLongPress();
+});
+
+hintButton.addEventListener("pointerup", () => {
+    cancelHintLongPress();
+});
+
+hintButton.addEventListener("pointerleave", () => {
+    cancelHintLongPress();
+});
+
+hintButton.addEventListener("pointercancel", () => {
+    cancelHintLongPress();
+});
+
+hintButton.addEventListener("click", (event) => {
+    if(suppressHintClick || longPressActivated){
+        event.preventDefault();
+
+        setTimeout(() => {
+            suppressHintClick = false;
+            longPressActivated = false;
+        }, 300);
+
+        return;
+    }
+
+    window.open(
+        HINT_URL,
+        "_blank",
+        "noopener,noreferrer"
+    );
+});
+
+rescueSubmitButton.addEventListener("click", () => {
+    submitRescueCode();
+});
+
+rescueCloseButton.addEventListener("click", () => {
+    closeRescueModal();
+});
+
+rescueInput.addEventListener("keydown", (event) => {
+    if(event.key === "Enter"){
+        submitRescueCode();
+    }
+
+    if(event.key === "Escape"){
+        closeRescueModal();
+    }
+});
+
+rescueModal.addEventListener("click", (event) => {
+    if(event.target === rescueModal){
+        closeRescueModal();
+    }
+});
+
+let currentIndex = saveData.dialogIndex;
+let isTyping = false;
+let skipTyping = false;
+
+async function showDialogue(){
+    if(currentIndex >= dialogues.length){
+        dialogText.textContent = `接続準備が完了しました。`;
+        tapText.classList.add("hidden");
+        startBox.classList.remove("hidden");
+        return;
+    }
+
+    const currentDialogue = dialogues[currentIndex];
+    const text = currentDialogue.text;
+    const speed = currentDialogue.speed;
+
+    dialogText.textContent = "";
+    tapText.classList.add("hidden");
+
+    isTyping = true;
+    skipTyping = false;
+
+    for(let i = 0; i < text.length; i++){
+        if(skipTyping){
+            dialogText.textContent = text;
+            break;
+        }
+
+        dialogText.textContent += text[i];
+
+        await new Promise(resolve => {
+            setTimeout(resolve, speed);
+        });
+    }
+
+    isTyping = false;
+    tapText.classList.remove("hidden");
+}
+
+dialogBox.addEventListener("click", () => {
+    if(currentIndex >= dialogues.length){
+        return;
+    }
+
+    if(isTyping){
+        skipTyping = true;
+        return;
+    }
+
+    currentIndex++;
+
+    saveData.dialogIndex = currentIndex;
+    saveProgress();
+
+    showDialogue();
+});
+
+startButton.addEventListener("click", () => {
+    startButton.disabled = true;
+    startButton.textContent = "OPENING ARCHIVE...";
+
+    const newTab = window.open("about:blank", "_blank");
+
+    if(!newTab){
+        alert("新しいタブを開けませんでした。ブラウザのポップアップ設定を確認してください。");
+        startButton.disabled = false;
+        startButton.textContent = "このボタンを押してください";
+        return;
+    }
+
+    newTab.document.write(`
+        <html>
+        <head>
+            <title>OPENING ARCHIVE...</title>
+            <style>
+                body{
+                    margin:0;
+                    background:#05080a;
+                    color:#6fffe9;
+                    font-family:Consolas,monospace;
+                    display:flex;
+                    align-items:center;
+                    justify-content:center;
+                    height:100vh;
+                    text-align:center;
+                }
+            </style>
+        </head>
+        <body>
+            <div>
+                <h1>OPENING ARCHIVE...</h1>
+                <p>Please wait.</p>
+            </div>
+        </body>
+        </html>
+    `);
+
+    setTimeout(() => {
+        newTab.location.href = GAME_URL;
+
+        startButton.disabled = false;
+        startButton.textContent = "このボタンを押してください";
+    }, 1000);
+});
+
+resetButton.addEventListener("click", () => {
+    const ok = confirm("本当に進行状況をリセットしますか？");
+
+    if(!ok){
+        return;
+    }
+
+    localStorage.removeItem(SAVE_KEY);
+
+    saveData = {
+        unlocked:false,
+        dialogIndex:0
+    };
+
+    currentIndex = 0;
+    isTyping = false;
+    skipTyping = false;
+    pauseAutoUnlock = true;
+
+    dialogText.textContent = "";
+    tapText.classList.add("hidden");
+    startBox.classList.add("hidden");
+
+    log.textContent = "";
+    initLog();
+
+    applyLockedView();
+    showScreen(lockScreen);
+
+    updateClock();
+
+    window.scrollTo({
+        top:0,
+        behavior:"smooth"
+    });
+});
+
+function startMainPage(){
+    initLog();
+
+    updateClock();
+    setInterval(updateClock, 1000);
+
+    if(saveData.unlocked){
+        applyUnlockedView();
+        showScreen(dialogScreen);
+        showDialogue();
+    }else{
+        applyLockedView();
+        showScreen(lockScreen);
+    }
+}
+
+/* =========================
+   起動
+========================= */
+
+initTicketAuth();
+</script>
+
+</body>
+</html>
