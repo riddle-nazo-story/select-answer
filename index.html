@@ -945,19 +945,38 @@ async function initTicketAuth(){
             addTicketLog("Ticket authorization granted.");
 
             if(result.expiresAt){
-                const expiresAt = new Date(result.expiresAt);
+    const expiresAt = new Date(result.expiresAt);
 
-                expiresMessage.textContent =
-                    "有効期限：" +
-                    expiresAt.toLocaleString("ja-JP", {
-                        year:"numeric",
-                        month:"2-digit",
-                        day:"2-digit",
-                        hour:"2-digit",
-                        minute:"2-digit"
-                    }) +
-                    " まで";
-            }
+    let serverNowText = "";
+
+    if(result.serverNow){
+        const serverNow = new Date(result.serverNow);
+
+        serverNowText =
+            "\nサーバー確認時刻：" +
+            serverNow.toLocaleString("ja-JP", {
+                year:"numeric",
+                month:"2-digit",
+                day:"2-digit",
+                hour:"2-digit",
+                minute:"2-digit"
+            });
+    }
+
+    expiresMessage.textContent =
+        "有効期限：" +
+        expiresAt.toLocaleString("ja-JP", {
+            year:"numeric",
+            month:"2-digit",
+            day:"2-digit",
+            hour:"2-digit",
+            minute:"2-digit"
+        }) +
+        " まで" +
+        serverNowText +
+        "\n\n※ 有効期限は端末時刻ではなく、サーバー時間を基準に管理されています。" +
+        "\n※ 端末の日付変更はゲーム内演出にのみ使用されます。";
+}
 
             localStorage.setItem(TOKEN_KEY, token);
 
