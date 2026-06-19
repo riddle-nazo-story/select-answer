@@ -540,7 +540,7 @@ body.release-effect .container{
     <div class="box">
         <div class="meta">
             <p><span class="label">TICKET AUTH：</span><span id="ticketAuthState">CHECKING...</span></p>
-            <p><span class="label">GAME ID：</span>SERWER</p>
+            <p><span class="label">GAME ID：</span>select-answer</p>
             <p><span class="label">TOKEN：</span><span id="tokenPreview">--</span></p>
 
             <div class="divider"></div>
@@ -591,7 +591,7 @@ body.release-effect .container{
         <div class="meta">
             <p><span class="label">チケット認証：</span>完了</p>
             <p><span class="label">認証状態：</span><span id="authState">待機中</span></p>
-            <p><span class="label">認証対象：</span>SERWER</p>
+            <p><span class="label">認証対象：</span>select-answer</p>
             <p><span class="label">同期状態：</span>LOCAL CLOCK VERIFIED</p>
 
             <div class="divider"></div>
@@ -676,7 +676,7 @@ body.release-effect .container{
 ========================= */
 
 const TOKEN_API_URL = "https://script.google.com/macros/s/AKfycbxQlmn_aMq-6ny0Io4iGbBHFXcU6vRxYt6BGk9MeLbZjppsqWlujis-bMdFRXciMZtt/exec";
-const GAME_ID = "serwer";
+const GAME_ID = "select-answer";
 
 // ゲーム本体は同じGitHubリポジトリ内の game.html に置く想定です。
 const GAME_URL = "game.html";
@@ -690,9 +690,9 @@ const HINT_URL = "https://sites.google.com/view/make-ai-game/hint";
 
 const RELEASE_DATE = new Date("2026-07-07T00:00:00+09:00");
 
-const SAVE_KEY = "eve_intro_save_serwer_v1";
+const SAVE_KEY = "eve_intro_save_select-answer_v1";
 const DEVICE_KEY = "riddle_story_device_id_v1";
-const TOKEN_KEY = "riddle_story_current_token_serwer";
+const TOKEN_KEY = "riddle_story_current_token_select-answer";
 
 const RESCUE_CODE = "20260707";
 const LONG_PRESS_TIME = 10000;
