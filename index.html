@@ -1465,12 +1465,23 @@ startButton.addEventListener("click", () => {
     `);
 
     setTimeout(() => {
-        newTab.location.href = GAME_URL;
+    const token = localStorage.getItem("riddle_story_current_token_select-answer");
 
-        startButton.disabled = false;
-        startButton.textContent = "このボタンを押してください";
-    }, 1000);
-});
+    if(token){
+        const separator = GAME_URL.includes("?") ? "&" : "?";
+
+        newTab.location.href =
+            GAME_URL +
+            separator +
+            "token=" +
+            encodeURIComponent(token);
+    }else{
+        newTab.location.href = GAME_URL;
+    }
+
+    startButton.disabled = false;
+    startButton.textContent = "このボタンを押してください";
+}, 1000);
 
 resetButton.addEventListener("click", () => {
     const ok = confirm("本当に進行状況をリセットしますか？");
