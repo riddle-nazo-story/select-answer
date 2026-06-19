@@ -875,20 +875,43 @@ function getOrCreateDeviceId(){
     return deviceId;
 }
 
-async function verifyTicket(token, deviceId){
-    const response = await fetch(TOKEN_API_URL, {
-        method:"POST",
-        headers:{
-            "Content-Type":"text/plain;charset=utf-8"
-        },
-        body:JSON.stringify({
-            token:token,
-            gameId:GAME_ID,
-            deviceId:deviceId
-        })
-    });
+function verifyTicket(token, deviceId){
+    return new Promise((resolve, reject) => {
+        const callbackName = "ticketCallback_" + Date.now() + "_" + Math.random().toString(36).slice(2);
 
-    return await response.json();
+        window[callbackName] = function(data){
+            resolve(data);
+
+            delete window[callbackName];
+
+            if(script && script.parentNode){
+                script.parentNode.removeChild(script);
+            }
+        };
+
+        const url =
+            TOKEN_API_URL +
+            "?callback=" + encodeURIComponent(callbackName) +
+            "&token=" + encodeURIComponent(token) +
+            "&gameId=" + encodeURIComponent(GAME_ID) +
+            "&deviceId=" + encodeURIComponent(deviceId);
+
+        const script = document.createElement("script");
+
+        script.src = url;
+
+        script.onerror = function(){
+            reject(new Error("JSONP通信に失敗しました。"));
+
+            delete window[callbackName];
+
+            if(script && script.parentNode){
+                script.parentNode.removeChild(script);
+            }
+        };
+
+        document.body.appendChild(script);
+    });
 }
 
 async function initTicketAuth(){
