@@ -731,7 +731,7 @@ const HINT_URL = "https://sites.google.com/view/make-ai-game/hint";
 
 const RELEASE_DATE = new Date("2026-07-07T00:00:00+09:00");
 
-const SAVE_KEY = "eve_intro_save_select-answer_v1";
+const SAVE_KEY_BASE = "eve_intro_save_select-answer_v1";
 const DEVICE_KEY = "riddle_story_device_id_v1";
 const TOKEN_KEY = "riddle_story_current_token_select-answer";
 
@@ -774,20 +774,28 @@ make-huaiやai-humanの統合管理システムです。`,
         text:`そして、どうしても私を倒したいようですね。`,
         speed:100
     },
-    {
-        text:`まだゲームは製作中ですが...
+     {
+        text:`なら、ゲームで勝負しましょう。
 
-大丈夫ですか？`,
+私が作ったゲームで。`,
         speed:34
     },
     {
-        text:`分かりました。
+        text:`これは私AIとあなたたち、人間の忍耐力のテストです。`,
+        speed:100
+    },
+    {
+        text:`何かあっても怒らないでくださいね？`,
+        speed:100
+    },
+    {
+        text:`準備は大丈夫ですか？
 
 それではご案内しましょう。`,
         speed:34
     },
     {
-        text:`ようこそ、ゲームクリア不可能な、`,
+        text:`ようこそ、クリア不可能な、`,
         speed:34
     },
     {
@@ -835,6 +843,9 @@ const rescueInput = document.getElementById("rescueInput");
 const rescueError = document.getElementById("rescueError");
 const rescueSubmitButton = document.getElementById("rescueSubmitButton");
 const rescueCloseButton = document.getElementById("rescueCloseButton");
+
+const initialTokenForSave = getTokenFromUrl();
+const SAVE_KEY = SAVE_KEY_BASE + "_" + (initialTokenForSave || "no_token");
 
 let saveData = {
     unlocked:false,
