@@ -248,6 +248,10 @@ body{
             クリア報告※必ず行ってください
         </button>
 
+        <button class="main-button" id="stampButton">
+            スタンプを取得する※処理に時間がかかります
+        </button>
+
         <div class="credit">
             <strong>CREDIT</strong><br>
             制作：RIDDLE STORY運営代表<br>？？？<br>
@@ -267,6 +271,7 @@ const TOKEN_KEY = "riddle_story_current_token_select-answer";
 
 const X_REPORT_URL = "https://x.gd/aphJ5";
 const FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLScqJrkdMVAd0Kh4MPfJYdWWg7_rKId7vrPz6mwRsMqMMz6VBw/viewform?usp=publish-editor";
+const STAMP_URL = "https://riddle-nazo-story.github.io/member/stamp.html?code=RS-STAMP-select-answer-ZHMVM5X5";
 
 const expiryBar = document.getElementById("expiryBar");
 const expiryBarText = document.getElementById("expiryBarText");
@@ -279,6 +284,7 @@ const clearImage = document.getElementById("clearImage");
 
 const xButton = document.getElementById("xButton");
 const formButton = document.getElementById("formButton");
+const stampButton = document.getElementById("stampButton");
 
 let ticketExpiresAt = null;
 let expiryCountdownTimer = null;
@@ -480,6 +486,10 @@ xButton.addEventListener("click", () => {
 
 formButton.addEventListener("click", () => {
     window.open(appendTokenToUrl(FORM_URL), "_blank", "noopener,noreferrer");
+});
+
+stampButton.addEventListener("click", () => {
+    window.open(appendTokenToUrl(STAMP_URL), "_blank", "noopener,noreferrer");
 });
 
 initClearAuth();
