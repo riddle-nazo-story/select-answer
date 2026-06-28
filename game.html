@@ -755,6 +755,7 @@ let metronomeId = null;
 let ticketExpiresAt = null;
 let expiryCountdownTimer = null;
 let ticketAuthorized = false;
+let isJudging = false;
 
 function addAuthLog(message){
     const time = new Date().toLocaleTimeString("ja-JP");
@@ -1104,6 +1105,7 @@ function render(){
     choiceB.classList.remove("hold", "correct-choice", "wrong-choice");
 
     hideJudge();
+    isJudging = false;
 
     holdA = false;
     holdB = false;
@@ -1151,9 +1153,16 @@ function next(){
 }
 
 function answer(choice){
+    if(isJudging){
+        return;
+    }
+
+    isJudging = true;
+
     const p = puzzles[index];
 
     if(p.final){
+        isJudging = false;
         finalWrong();
         return;
     }
@@ -1172,6 +1181,7 @@ function answer(choice){
 
         setTimeout(() => {
             hideJudge();
+            isJudging = false;
             next();
         }, 700);
 
@@ -1188,10 +1198,11 @@ function answer(choice){
 }
 
 function finalWrong(){
-    if(finalCleared){
+    if(finalCleared || isJudging){
         return;
     }
 
+    isJudging = true;
     failAndReset("不正解です。最初からやり直してください。");
 }
 
@@ -1205,11 +1216,16 @@ function failAndReset(reason){
 
     setTimeout(() => {
         hideJudge();
+        isJudging = false;
         resetToStart();
     }, 700);
 }
 
 function press(choice){
+    if(isJudging){
+        return;
+    }
+
     const p = puzzles[index];
 
     if(!p.final){
@@ -1232,6 +1248,7 @@ function press(choice){
     }
 
     if(holdA && holdB){
+        isJudging = true;
         finalCleared = true;
         clearTimeout(finalSinglePressTimer);
         clearInterval(timerId);
@@ -1244,6 +1261,7 @@ function press(choice){
 
         setTimeout(() => {
             hideJudge();
+            isJudging = false;
             next();
         }, 700);
 
@@ -1288,6 +1306,7 @@ function resetToStart(){
     holdA = false;
     holdB = false;
     finalCleared = false;
+    isJudging = false;
 
     show(startScreen);
 }
